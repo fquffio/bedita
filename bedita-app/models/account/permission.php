@@ -68,7 +68,7 @@ class Permission extends BEAppModel
                     'OR' => array(
                         'name' => $userData['groups'],
                         'id' => $userData['groups'],
-                    );
+                    ),
                 ),
             ));
         }
@@ -92,7 +92,7 @@ class Permission extends BEAppModel
         // TODO: Use object cache.
 
         if (!empty($userData)) {
-            $conditions['OR'] => array(
+            $conditions['OR'] = array(
                 'AND' => array('switch' => 'group', 'ugid' => array_keys($this->getGroups($userData))),
                 'OR' => array(
                     '0 = 1',
