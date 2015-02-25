@@ -33,6 +33,7 @@ class Permission extends BEAppModel
     const PERM_NOINHERIT = 1;
     const PERM_READ = 1;  // 2nd-3rd bit.
     const PERM_WRITE = 3;  // 4th-5th bit.
+    const PERM_BACKEND = 3;  // 6th-7th bit.
 
     const PERM_NO = 0;  // 0b00
     const PERM_NEVER = 1;  // 0b01
@@ -51,6 +52,58 @@ class Permission extends BEAppModel
             'foreignKey' => 'ugid'
         ),
     );
+
+    /**
+     * Formats a permission value to the standard format.
+     *
+     * @param mixed $value Value. Can be either one of the predefined `PERM_*` constants, or a string.
+     * @return int Standardized value.
+     */
+    private function formatValue ($value) {
+        if (is_numeric($value)) {
+            return (int) $value & self::PERM_FULL;
+        }
+        switch (strtoupper($value)) {
+            case 'NO':
+                return self::PERM_NO;
+            case 'NEVER':
+                return self::PERM_NEVER;
+            case 'PARTIAL':
+                return self::PERM_PARTIAL;
+            case 'FULL':
+                return self::PERM_FULL;
+        }
+        return self::PERM_NO;
+    }
+
+    /**
+     * Formats a flag according to the standard format, ensuring it is well formed.
+     *
+     * @param mixes $flag Flag. Can be either an `int`, or an array with keys `'read', 'write', 'noinherit'`.
+     * @return int Standardized flag.
+     */
+    private function formatFlag ($flag) {
+        if (is_int($flag)) {
+            return $flag & ((self::PERM_FULL << self::PERM_BACKEND) | (self::PERM_FULL << self::PERM_WRITE) | (self::PERM_FULL << self::PERM_READ) | self::PERM_NOINHERIT);
+        }
+        if (is_array($flag)) {
+            $res = 0;
+            if (array_key_exists('read', $flag)) {
+                $res = $res | ($this->formatValue($flag['read']) << self::PERM_READ);
+            }
+            if (array_key_exists('write', $flag)) {
+                $res = $res | ($this->formatValue($flag['write']) << self::PERM_WRITE);
+            }
+            if (array_key_exists('backend', $flag)) {
+                $res = $res | ($this->formatValue($flag['backend']) << self::PERM_BACKEND);
+            }
+            if (array_key_exists('noinherit', $flag)) {
+                $res = $res | ((int) $flag['noinherit'] & self::PERM_NOINHERIT);
+            }
+            return $res;
+        }
+        return 0;
+    }
 
     /**
      * Returns an associative array of IDs / names of the Groups the User belongs to.
@@ -149,7 +202,7 @@ class Permission extends BEAppModel
         foreach ($objects as &$obj) {
             $conditions = array('object_id' => $obj['id']);
             if (array_key_exists('flag', $options)) {
-                $conditions['flag'] = $options['flag'];
+                $conditions['flag'] = $this->formatFlag($options['flag']);
             }
             $obj['num_of_permission'] = $this->find('count', array(
                 'conditions' => $conditions
@@ -163,7 +216,7 @@ class Permission extends BEAppModel
             'object_id' => $ids,
         );
         if (array_key_exists('flag', $options)) {
-            $conditions['flag'] = $options['flag'];
+            $conditions['flag'] = $this->formatFlag($options['flag']);
         }
         $res = $this->find('list', array(
             'contain' => array(),
@@ -175,55 +228,6 @@ class Permission extends BEAppModel
             $obj['num_of_permission'] = $res[$obj['id']];
         }
         return $objects;
-    }
-
-    /**
-     * Formats a permission value to the standard format.
-     *
-     * @param mixed $value Value. Can be either one of the predefined `PERM_*` constants, or a string.
-     * @return int Standardized value.
-     */
-    private function formatValue ($value) {
-        if (is_numeric($value)) {
-            return (int) $value & self::PERM_FULL;
-        }
-        switch (strtoupper($value)) {
-            case 'NO':
-                return self::PERM_NO;
-            case 'NEVER':
-                return self::PERM_NEVER;
-            case 'PARTIAL':
-                return self::PERM_PARTIAL;
-            case 'FULL':
-                return self::PERM_FULL;
-        }
-        return self::PERM_NO;
-    }
-
-    /**
-     * Formats a flag according to the standard format, ensuring it is well formed.
-     *
-     * @param mixes $flag Flag. Can be either an `int`, or an array with keys `'read', 'write', 'noinherit'`.
-     * @return int Standardized flag.
-     */
-    private function formatFlag ($flag) {
-        if (is_int($flag)) {
-            return $flag & ((self::PERM_FULL << self::PERM_WRITE) | (self::PERM_FULL << self::PERM_READ) | self::PERM_NOINHERIT);
-        }
-        if (is_array($flag)) {
-            $res = 0;
-            if (array_key_exists('read', $flag)) {
-                $res = $res | ($this->formatValue($flag['read']) << self::PERM_READ);
-            }
-            if (array_key_exists('write', $flag)) {
-                $res = $res | ($this->formatValue($flag['write']) << self::PERM_WRITE);
-            }
-            if (array_key_exists('noinherit', $flag)) {
-                $res = $res | ((int) $flag['noinherit'] & self::PERM_NOINHERIT);
-            }
-            return $res;
-        }
-        return 0;
     }
 
     /**
@@ -257,6 +261,7 @@ class Permission extends BEAppModel
                 ));
                 unset($p['name']);
             }
+            $p['flag'] = $this->formatFlag($p['flag']);
 
             $this->create();
             if (!$this->save($p)) {
@@ -294,6 +299,7 @@ class Permission extends BEAppModel
                 $p['object_id'] = ClassRegistry::init('BEObject')->field('id', array('nickname' => $p['nickname']));
                 unset($p['nickname']);
             }
+            $p['flag'] = $this->formatFlag($p['flag']);
 
             $this->create();
             if (!$this->save($p)) {
@@ -413,14 +419,15 @@ class Permission extends BEAppModel
     }
 
     /**
-     * Returns the permission resulting from the passed permission set.
+     * Returns the permission resulting from the passed permission set. If no permissions at all are applied, assumes full access.
      *
      * @param array $allPerms All permissions, as a tridimensional array, where first depth level represent inheritance depth level, and second level is an array of permissions (see above).
      * @param array $userData User data array containing key `id` and `groups`, as a list of Groups to be checked against. Group "everyone" with ID `0` is always taken into account.
-     * @param mixed $type Permission type. Can be either a string (`'read'` or `'write'`) or one of the two constants `Permission::PERM_READ`, `Permission::PERM_WRITE`.
+     * @param mixed $type Permission type. Can be either a string (`'read', 'write', 'backend'`) or one of the constants `Permission::PERM_READ`, `Permission::PERM_WRITE`, `Permission::PERM_BACKEND`.
+     * @param int $count Count of actually applied permissions.
      * @return int Resulting permission, as one of the constants `PERM_NO`, `PERM_PARTIAL` or `PERM_FULL`.
      */
-    public function checkPermissions (array $allPerms, array $userData = null, $type = self::PERM_READ) {
+    public function checkPermissions (array $allPerms, array $userData = null, $type = self::PERM_READ, &$count = null) {
         $groups = $this->getGroups($userData);
         if (in_array('administrator', $groups)) {
             // Administrators always have full permissions.
@@ -429,6 +436,10 @@ class Permission extends BEAppModel
 
         // Choose permission type.
         switch ($type) {
+            case 'backend':
+            case self::PERM_BACKEND:
+                $type = self::PERM_BACKEND;
+                break;
             case 'write':
             case self::PERM_WRITE:
                 $type = self::PERM_WRITE;
@@ -439,6 +450,7 @@ class Permission extends BEAppModel
                 $type = self::PERM_READ;
         }
 
+        $count = 0;
         $perm = 0;
         $stopInheritance = 0;
         $applied; $flag;
@@ -452,6 +464,7 @@ class Permission extends BEAppModel
                     // Filter by actually applied permissions.
                     continue;
                 }
+                $count++;
 
                 // Multiple groups.
                 $stopInheritance = $stopInheritance | ($p['flag'] & self::PERM_NOINHERIT);
@@ -467,7 +480,7 @@ class Permission extends BEAppModel
                 break;
             }
         }
-        return $perm;
+        return $count ? $perm : self::PERM_FULL;
     }
 
     /**
@@ -496,8 +509,62 @@ class Permission extends BEAppModel
      * @see Permission::checkPermissions()
      * @deprecated
      */
-    public function checkPermissionByUser (array $perms=array(), array &$userData) {
+    public function checkPermissionByUser (array $perms = array(), array $userData) {
         return (bool) $this->checkPermissions($perms, $userData);
+    }
+
+    /**
+     * Tells whether Object is backend-private for User.
+     *
+     * @param int $objectId Object ID.
+     * @param array $userData User data array.
+     * @return boolean Backend-private.
+     * @see Permission::checkPermission()
+     * @deprecated
+     */
+    public function isForbidden ($objectId, array $userData) {
+        $perms = $this->loadPath($objectId, $userData);
+        return !((bool) $this->checkPermissions($perms, $userData, self::PERM_BACKEND));
+    }
+
+    /**
+     * Tells whether Object is accessible by User.
+     * 
+     * @param int $objectId Object ID.
+     * @param array $userData User data array.
+     * @param array $perms Permission array as obtained from `Permission::loadPath()`.
+     * @return boolean Accessible.
+     * @see Permission::checkPermission()
+     * @deprecated
+     */
+    public function isAccessibleByFrontend ($objectId, array $userData, $perms = array()) {
+        if (empty($perms)) {
+            $perms = $this->loadPath($objectId, $userData);
+        }
+        return (bool) $this->checkPermissions($perms, $userData);
+    }
+
+    /**
+     * Returns access level for Object.
+     *
+     * @param int $objectId Object ID.
+     * @param array $userData User data array.
+     * @return string Access level.
+     * @see Permission::checkPermission()
+     * @deprecated
+     */
+    public function frontendAccess ($objectId, array $userData = array()) {
+        $perms = $this->loadPath($objectId, $userData);
+        $levels = array(
+            self::PERM_NO => 'denied',
+            self::PERM_PARTIAL => 'partial',
+            self::PERM_FULL => 'full',
+        );
+
+        $count;
+        $perm = $this->checkPermissions($perms, $userData, self::PERM_READ, $count);
+
+        return $count ? $levels[$perm] : 'free';
     }
 
 
@@ -505,125 +572,6 @@ class Permission extends BEAppModel
     /**************** \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ ****************/
 
 
-
-	/**
-	 * Is object ($objectId) forbidden to user?
-	 * Backend only (check backend_private permission)
-	 *
-	 * @param integer $objectId
-	 * @param array $userData user data, like array("id" => .., "userid" => ..., "groups" => array("administrator", "frontend",...))
-	 * @return boolean, true if it's forbidden false if it's allowed
-	 */
-	public function isForbidden($objectId, array &$userData) {
-		// no private objects for administrator
-		if (!BACKEND_APP || ( !empty($userData['groups']) && in_array("administrator", $userData['groups'])) ) {
-			return false;
-		}
-
-		$forbidden = false;
-		$privatePermission = Configure::read("objectPermissions.backend_private");
-
-		// check perms on main object ($objectId)
-		$perms = $this->isPermissionSet($objectId, $privatePermission);
-		$forbidden = !$this->checkPermissionByUser($perms, $userData);
-		if ($forbidden) {
-			return true;
-		}
-
-		// check if some branch parent is allowed, if so object is not forbidden
-		$parentsPath = ClassRegistry::init('Tree')->find('list', array(
-			'fields' => array('parent_path'),
-			'conditions' => array('id' => $objectId)
-		));
-
-		if (!empty($parentsPath)) {
-			foreach ($parentsPath as $path) {
-				$path = trim($path, '/');
-				$pathArr = explode('/', $path);
-				$branchAllowed = array();
-				foreach ($pathArr as $parentId) {
-					$perms = $this->isPermissionSet($parentId, $privatePermission);
-					$branchAllowed[] = $this->checkPermissionByUser($perms, $userData);
-				}
-
-				if (!in_array(false, $branchAllowed)) {
-					$forbidden = false;
-					break;
-				} else {
-					$forbidden = true;
-				}
-			}
-		}
-
-		return $forbidden;
-	}
-
-	/**
-	 * Is object ($objectId) accessible by user in frontend?
-	 * 
-	 * @param $objectId
-	 * @param $userData  user data, like array("id" => .., "userid" => ..., "groups" => array("administrator", "frontend",...))
-	 * @param $perms permission array defined like in checkPermissionByUser() call
-	 * 				 if it's defined use it else get permission by $objectId
-	 * @return boolean, true if it's accessible
-	 */
-	public function isAccessibleByFrontend($objectId, array &$userData, $perms = array()) {
-		if (empty($perms)) {
-			$perms = $this->isPermissionSet($objectId, array(
-				Configure::read("objectPermissions.frontend_access_with_block"),
-				Configure::read("objectPermissions.frontend_access_without_block")
-			));
-		}
-		return $this->checkPermissionByUser($perms, $userData);
-	}
-	
-    /**
-     * Return frontend level access to an object
-     *
-     * Possible returned values are:
-     *
-     * * 'free' if the object has not frontend_access perms
-     * * 'denied' if the object isn't accessible (frontend_access_with_block perms set and user groups haven't that permission on that object)
-     * * 'partial' if the object is accessible in preview (frontend_access_without_block perms set and user groups haven't that permission on that object)
-     * * 'full' if the object has perms and user groups have that permission on that object
-     *
-     * @param int $objectId
-     * @param array &$userData user data as
-     *                         ```
-     *                         array(
-     *                             'id' => ..,
-     *                             'userid' => ...,
-     *                             'groups' => array('administrator', 'frontend',...)
-     *                         )
-     *                         ```
-     * @return string
-     */
-	public function frontendAccess($objectId, array &$userData = array()) {
-		$accessWithBlock = Configure::read('objectPermissions.frontend_access_with_block');
-		$accessWithoutBlock = Configure::read('objectPermissions.frontend_access_without_block');
-		$perms = $this->isPermissionSet($objectId, array($accessWithBlock, $accessWithoutBlock));
-
-		// full access because no perms are set
-		if (empty($perms)) {
-			return 'free';
-		}
-
-		if (!empty($userData)) {
-			// full access => one perm for user group
-			if ($this->checkPermissionByUser($perms, $userData)) {
-			    return 'full';
-			}
-		}
-
-		$flags = Set::extract('/Permission/flag', $perms);
-
-		// access denied => object has at least one perm 'frontend_access_with_block'
-		if (in_array($accessWithBlock, $flags)) {
-			return 'denied';
-		}
-		// partial access => object has at least one perm 'frontend_access_without_block'
-		return 'partial';
-	}
 
 	/**
 	 * Check if an Object has permissions of the given type.
