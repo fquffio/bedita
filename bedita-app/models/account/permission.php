@@ -84,8 +84,8 @@ class Permission extends BEAppModel
      * @return int Standardized flag.
      */
     private function formatFlag ($flag) {
-        if (is_int($flag)) {
-            return $flag & ((self::PERM_FULL << self::PERM_BACKEND) | (self::PERM_FULL << self::PERM_WRITE) | (self::PERM_FULL << self::PERM_READ) | self::PERM_NOINHERIT);
+        if (is_numeric($flag)) {
+            return (int) $flag & ((self::PERM_FULL << self::PERM_BACKEND) | (self::PERM_FULL << self::PERM_WRITE) | (self::PERM_FULL << self::PERM_READ) | self::PERM_NOINHERIT);
         }
         if (is_array($flag)) {
             $res = 0;
