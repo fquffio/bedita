@@ -70,6 +70,7 @@ $(document).ready(function(){
             .appendTo($tr);
 
         $permTbl.find('tbody').append($tr);
+        $tr.find('select').select2();
     });
 
     $permTbl.on('click', 'input[type="button"]', function() {
