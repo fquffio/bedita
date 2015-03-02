@@ -265,7 +265,7 @@ if (!defined("BEDITA_PERMS_READ")) {
 	define("BEDITA_PERMS_READ",	0x1) ; // read-only module permission
 }
 if (!defined("BEDITA_PERMS_MODIFY")) {
-	define("BEDITA_PERMS_MODIFY",	0x2) ;
+	define("BEDITA_PERMS_MODIFY", 0x2) ;
 }
 if (!defined("BEDITA_PERMS_READ_MODIFY")) {
 	define("BEDITA_PERMS_READ_MODIFY",	BEDITA_PERMS_READ|BEDITA_PERMS_MODIFY) ; // read-write module permission
@@ -281,13 +281,15 @@ $config['BEDITA_PERMS_READ_MODIFY'] = BEDITA_PERMS_READ_MODIFY;
 /**
  * object permissions
  */
-$config["objectPermissions"] = array(
-	"write" => 1,
-	"frontend_access_with_block" => 2,
-	"frontend_access_without_block" => 3,
-	"backend_private" => 4
+$config['objectPermissions'] = array(
+    'modes' => array('read', 'write', 'backend'),
+    'levels' => array(
+        'no' => 0,
+        'never' => 1,
+        'partial' => 2,
+        'full' => 3,
+    ),
 );
-
 
 /**
  * BEdita modules

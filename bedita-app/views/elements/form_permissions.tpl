@@ -3,81 +3,101 @@ https://dev.channelweb.it/bedita/ticket/156
 https://dev.channelweb.it/bedita/ticket/157
 *}
 
-<script type="text/javascript">
-var urlLoad = "{$html->url('/pages/loadUsersGroupsAjax')}";
-var permissionLoaded = false;
-var permissions = new Array();
+{$permModes = $conf->objectPermissions.modes}
+{$permLevels = $conf->objectPermissions.levels}
 
-{foreach from=$conf->objectPermissions key="permKey" item="permItem"}
-	permissions[{$permItem}] = "{t}{$permKey}{/t}";
-{/foreach}
+<script type="text/javascript">
+var urlLoad = '{$html->url('/pages/loadUsersGroupsAjax')}',
+    permissionLoaded = false,
+    permissions = {
+        'modes': [{foreach $permModes as $mode}'{$mode}'{if !$mode@last}, {/if}{/foreach}],
+        'levels': { {foreach $permLevels as $desc => $val}{$val}: '{$desc}'{if !$val@last}, {/if}{/foreach} },
+    };
 
 $(document).ready(function(){
-	
-	$("#permissionsTab").click(function() {
-		if (!permissionLoaded) {
-			loadUserGroupAjax(urlLoad);
-		}
-	});
 
-	if ($("#permissionsTab h2").hasClass("open")) {
-		loadUserGroupAjax(urlLoad);
-	}
-	
-	$("#cmdAddGroupPerm").click(function() {
-		var name = $("#inputAddPermGroup").val();
-		var type = "group";
-		var perm = $("#selectGroupPermission").val();
-		var index = $("#frmCustomPermissions").find("tr[id^='permTR_']:last").prop("id");
-		
-		if (index == undefined) {
-			index = 0;
-		} else {
-			indexArr = index.split("_");
-			index = parseInt(indexArr[1]) + 1;
-		}
-		
-		var htmlBlock = "<tr id=\"permTR_" + index + "\"><td>" + name + "</td>" +
-						"<td>" + permissions[perm] + "</td>" + 
-						"<td style='text-align: right;'>" +
-						"<input type=\"hidden\" name=\"data[Permission]["+index+"][flag]\" value=\""+perm+"\"/>" + 
-						"<input type=\"hidden\" name=\"data[Permission]["+index+"][switch]\" value=\""+type+"\"/>" +
-						"<input type=\"hidden\" name=\"data[Permission]["+index+"][name]\" value=\""+name+"\"/>" +
-						"<input type=\"button\" name=\"deletePerms\" value=\" x \"/>"+
-						"</td></tr>";
-		
-		$("#frmCustomPermissions").find("tr:last").after(htmlBlock);
-		refreshRemovePermButton();
-	});
+    var $permTab = $('#permissionsTab'),
+        $permTbl = $('#frmCustomPermissions'),
+        $permFrm = $('#selCustomPermissions');
 
-	refreshRemovePermButton();
+    $permTab.click(function() {
+        if (!permissionLoaded) {
+            loadUserGroupAjax(urlLoad);
+        }
+    });
+    if ($permTab.find('h2').hasClass('open')) {
+        loadUserGroupAjax(urlLoad);
+    }
 
+    $("#cmdAddGroupPerm").click(function() {
+        var groupName = $permFrm.find('[data-name="group"]').val(),
+            swtch = 'group',
+            index = $permTbl.find('tbody tr:last').prop('id');
+
+        // Find next available index.
+        if (typeof index === 'undefined') {
+            index = 0;
+        } else {
+            index = parseInt(index.split('_')[1]);
+        }
+        index++;
+        var inputName = 'data[Permission][' + index + ']';
+
+        // Build flag and label.
+        var label = [],
+            flag = {};
+        for (var i in permissions.modes) {
+            var mode = permissions.modes[i],
+                val = $permFrm.find('[data-name="' + mode + '"]').val();
+
+            flag[mode] = val;
+            label.push(mode + ': ' + permissions.levels[val]);
+        }
+        var noinherit = $permFrm.find('[data-name="noinherit"]').val();
+        flag['noinherit'] = noinherit;
+        label.push('stop inheritance: ' + noinherit);
+
+        // Build output.
+        var $tr = $('<tr>').attr('id', 'permTR_' + index);
+        $('<td>').text(groupName).appendTo($tr);
+        $('<td>').text(label.join('; ')).appendTo($tr);
+        $('<td>').css('text-align', 'right')
+            .append($('<input>').attr('type', 'hidden').attr('name', inputName + '[name]').val(groupName))
+            .append($('<input>').attr('type', 'hidden').attr('name', inputName + '[switch]').val(swtch))
+            .append(function () {
+                var res = [];
+                for (var mode in flag) {
+                    res.push($('<input>').attr('type', 'hidden').attr('name', inputName + '[flag][' + mode + ']').val(flag[mode]));
+                }
+                return res;
+            })
+            .append($('<input>').attr('type', 'button').attr('name', 'deletePerms').val(' x '))
+            .appendTo($tr);
+
+        $permTbl.find('tbody').append($tr);
+    });
+
+    $permTbl.on('click', 'input[type="button"]', function() {
+        $(this).closest('tr').remove();
+    });
 });
-
-function refreshRemovePermButton() {
-	$("#frmCustomPermissions").find("input[type='button']").click(function() {
-		$(this).parents("tr").remove();
-	});
-}
 
 function loadUserGroupAjax(url) {
 	$("#loaderug").show();
-	$("#inputAddPermGroup").load(url, { itype:'group' }, function() {
+	$("#inputAddPermGroup").load(url, { itype: 'group' }, function() {
 		$("#loaderug").hide();
 		permissionLoaded = true;
 	});
 }
 </script>
 
-{if empty($el)}
- {$el = $object|default:[]}
-{/if}
-
+{if empty($el)}{$el = $object|default:[]}{/if}
 {$relcount = $el.Permission|@count|default:0}
 <div class="tab" id="permissionsTab">
-	<h2 {if $relcount == 0}class="empty"{/if}>
-		{t}Permissions{/t} &nbsp; {if $relcount > 0}<span class="relnumb">{$relcount}</span>{/if}
-	</h2>
+    <h2 {if !$relcount}class="empty"{/if}>
+        {t}Permissions{/t}{if $relcount} &nbsp; <span class="relnumb">{$relcount}</span>{/if}
+
+    </h2>
 </div>
 
 <fieldset id="permissions">
@@ -88,21 +108,20 @@ function loadUserGroupAjax(url) {
 		<tr>
 			<th>{t}name{/t}</th>
 			<th>{t}permission{/t}</th>
-			<th>&nbsp;</th>
+			<th></th>
 		</tr>
 	</thead>
 
 {if !empty($el.Permission)}
-	
-	{section name=i loop=$el.Permission}
-	{assign var="perm" 	value=$el.Permission[i]}
-	{assign var="i" 	value=$smarty.section.i.index}
-		
+
+{foreach $el.Permission as $perm}
+{$i = $perm@iteration}
 		<tr id="permTR_{$i}">
 			<td>{$perm.name}</td>
 			<td>
-			{assign var="objPermReverse" value=$conf->objectPermissions|@array_flip}
-			{t}{$objPermReverse[$perm.flag]}{/t}
+                {$perm.flag}
+			{*{assign var="objPermReverse" value=$conf->objectPermissions|@array_flip}
+			{t}{$objPermReverse[$perm.flag]}{/t}*}
 			</td>
 			<td style="text-align: right">
 				<input type="hidden" name="data[Permission][{$i}][flag]" value="{$perm.flag}"/>
@@ -110,35 +129,37 @@ function loadUserGroupAjax(url) {
 				<input type="hidden" name="data[Permission][{$i}][name]" value="{$perm.name|escape:'quotes'}"/>
 				<input type="button" name="deletePerms" value=" x "/>
 			</td>
-		</tr>	
-		
-	{/section}
+		</tr>
+{/foreach}
 {else}
-	<tr class="trick">
-		<td></td>
-		<td></td>
-		<td></td>
-	</tr>
+    <tr class="trick">
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
 {/if}
 </table>
 
 <table class="" border="0" style="margin-top: 20px" id="selCustomPermissions">
-	<tr id="addPermGroupTR" class="ignore">
-		<td style="white-space:nowrap">
-			<label>{t}add group{/t}</label>: <select data-placeholder="{t}select a group{/t}" id="inputAddPermGroup" name="name"></select>
-		</td>
+    <tr id="addPermGroupTR" class="ignore">
+        <td style="white-space:nowrap">
+            <label>{t}add group{/t}: <select data-placeholder="{t}select a group{/t}" id="inputAddPermGroup" name="name" data-name="group"></select></label>
+        </td>
 
-		<td>
-			<label>{t}permission{/t}:</label> <select data-placeholder="{t}select a permission type{/t}" id="selectGroupPermission" name="groupPermission">
-				<option></option>
-				{foreach from=$conf->objectPermissions item="permVal" key="permLabel"}
-				<option value="{$permVal}">{t}{$permLabel}{/t}</option>
-				{/foreach}
-			</select>
-		</td>
-		
-		<td style="text-align: right"><input type="button" id="cmdAddGroupPerm" value=" {t}add{/t} "/></td>
-	</tr>
+{foreach $permModes as $mode}
+        <td>
+            <label>
+                {t}{$mode}{/t}:
+                <select data-placeholder="{t}select a permission type{/t}" id="selectGroupPermission-{$mode}" name="flag[{$mode}]" data-name="{$mode}">{html_options options=$permLevels|@array_flip}</select>
+            </label>
+        </td>
+{/foreach}
+
+        <td style="white-space:nowrap">
+            <label>{t}stop inheritance{/t}: <input type="checkbox" id="selectGroupPermission-noinherit" name="flag[noinherit]" data-name="noinherit" /></label>
+        </td>
+
+        <td style="text-align: right"><input type="button" id="cmdAddGroupPerm" value=" {t}add{/t} "/></td>
+    </tr>
 </table>
 </fieldset>
-
