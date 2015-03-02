@@ -32,7 +32,7 @@ class Permission extends BEAppModel
 {
     const PERM_READ = 1;  // 2nd-3rd bit.
     const PERM_WRITE = 3;  // 4th-5th bit.
-    const PERM_BACKEND = 3;  // 6th-7th bit.
+    const PERM_BACKEND = 5;  // 6th-7th bit.
 
     const PERM_NO = 0;  // 0b00
     const PERM_NEVER = 1;  // 0b01

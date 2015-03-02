@@ -32,7 +32,7 @@ $(document).ready(function(){
     $("#cmdAddGroupPerm").click(function() {
         var groupName = $permFrm.find('[data-name="group"]').val(),
             swtch = 'group',
-            index = $permTbl.find('tbody tr:last').prop('id');
+            index = $permTbl.find('tbody tr:last').attr('id');
 
         // Find next available index.
         if (typeof index === 'undefined') {
@@ -53,7 +53,7 @@ $(document).ready(function(){
             flag[mode] = val;
             label.push(mode + ': ' + permissions.levels[val]);
         }
-        var noinherit = $permFrm.find('[data-name="noinherit"]').val();
+        var noinherit = $permFrm.find('[data-name="noinherit"]').prop('checked') ? 1 : 0;
         flag['noinherit'] = noinherit;
         label.push('stop inheritance: ' + noinherit);
 
