@@ -115,9 +115,9 @@ class Permission extends BEAppModel
         $flag = $this->formatFlag($flag);  // Ensure it is a valid flag.
 
         $res = array(
-            'read' => ($flag << self::PERM_READ) & self::PERM_FULL,
-            'write' => ($flag << self::PERM_WRITE) & self::PERM_FULL,
-            'backend' => ($flag << self::PERM_BACKEND) & self::PERM_FULL,
+            'read' => ($flag >> self::PERM_READ) & self::PERM_FULL,
+            'write' => ($flag >> self::PERM_WRITE) & self::PERM_FULL,
+            'backend' => ($flag >> self::PERM_BACKEND) & self::PERM_FULL,
             'noinherit' => $flag & self::PERM_NOINHERIT,
         );
         return array_key_exists($part, $res) ? $res[$part] : $res;
@@ -212,9 +212,12 @@ class Permission extends BEAppModel
 
             // Format with hierarchy.
             foreach ($res as $perm) {
+                if (array_key_exists('Permission', $perm)) {
+                    $perm = $perm['Permission'];
+                }
                 $key = array_search($perm['object_id'], $path);
                 if (!array_key_exists($key, $perms)) {
-                    $perms = array();
+                    $perms[$key] = array();
                 }
                 array_push($perms[$key], $perm);
             }

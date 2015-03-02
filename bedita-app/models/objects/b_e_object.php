@@ -233,6 +233,7 @@ class BEObject extends BEAppModel {
 				} elseif ($perm["switch"] == "user") {
 					$perm["name"] = $this->Permission->User->field("name", array("id" => $perm["ugid"]));
 				}
+                $perm['parsedFlag'] = $this->Permission->parseFlag($perm['flag']);
 			}
 		}
 		
