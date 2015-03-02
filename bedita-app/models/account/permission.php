@@ -1,21 +1,21 @@
 <?php
 /*-----8<--------------------------------------------------------------------
- * 
+ *
  * BEdita - a semantic content management framework
- * 
+ *
  * Copyright 2008 ChannelWeb Srl, Chialab Srl
- * 
+ *
  * This file is part of BEdita: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published 
- * by the Free Software Foundation, either version 3 of the License, or 
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * BEdita is distributed WITHOUT ANY WARRANTY; without even the implied 
+ * BEdita is distributed WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public License 
+ * You should have received a copy of the GNU Lesser General Public License
  * version 3 along with BEdita (see LICENSE.LGPL).
  * If not, see <http://gnu.org/licenses/lgpl-3.0.html>.
- * 
+ *
  *------------------------------------------------------------------->8-----
  */
 
@@ -25,12 +25,11 @@
  * @version         $Revision$
  * @modifiedby      $LastChangedBy$
  * @lastmodified    $LastChangedDate$
- * 
+ *
  * $Id$
  */
 class Permission extends BEAppModel
 {
-    const PERM_NOINHERIT = 1;
     const PERM_READ = 1;  // 2nd-3rd bit.
     const PERM_WRITE = 3;  // 4th-5th bit.
     const PERM_BACKEND = 3;  // 6th-7th bit.
@@ -40,15 +39,17 @@ class Permission extends BEAppModel
     const PERM_PARTIAL = 2;  // 0b10
     const PERM_FULL = 3;  // 0b11
 
+    const PERM_NOINHERIT = 1;  // Inheritance stopper.
+
     public $belongsTo = array(
         'User' => array(
             'className' => 'User',
-            'conditions' => "Permission.switch = 'user' ",
+            'conditions' => array('Permission.switch' => 'user'),
             'foreignKey' => 'ugid'
         ),
         'Group' => array(
             'className' => 'Group',
-            'conditions' => "Permission.switch = 'group' ",
+            'conditions' => array('Permission.switch' => 'group'),
             'foreignKey' => 'ugid'
         ),
     );
@@ -130,59 +131,107 @@ class Permission extends BEAppModel
     }
 
     /**
-     * Load all object's permissions, with inheritance, that apply to the passed User.
+     * Load all object's permissions, with inheritance, that apply to the passed User, with the given `flags`.
      *
      * @param string $path Path of object, as retreived from `Tree` model.
      * @param array $userData User data. If empty, retreives all permissions.
+     * @param int $flags Flags to search for.
      * @return array Multidimensional array of inherited permissions, where first-level keys stand for inheritance depth level.
      */
-    public function loadPath ($path, array $userData = null) {
+    public function loadPath ($path, array $userData = null, $flags = null) {
         $path = array_reverse(explode('/', ltrim($path, '/')));  // Find parent objects' IDs.
-        $conditions = array(
-            'object_id' => $path,
-        );
+        $groups = !empty($userData) ? array_keys($this->getGroups($userData)) : null;  // Get user groups.
 
-        // TODO: Use object cache.
-
-        if (!empty($userData)) {
-            $conditions['OR'] = array(
-                'AND' => array('switch' => 'group', 'ugid' => array_keys($this->getGroups($userData))),
-                'OR' => array(
-                    '0 = 1',
-                    'AND' => array('switch' => 'user', 'ugid' => $userData['id']),
-                ),
-            );
-        }
-
-        // Read permissions.
-        $res = $this->find('all', array(
-            'contain' => array(),
-            'conditions' => $conditions,
-        ));
-
-        // Format with hierarchy.
         $perms = array();
-        foreach ($res as $perm) {
-            $key = array_search($perm['object_id'], $path);
-            if (!array_key_exists($key, $perms)) {
-                $perms = array();
+        if (!BACKEND_APP && Configure::read('objectCakeCache') && !Configure::read('staging')) {
+            // Use objects cache.
+            $beObjectCache = BeLib::getObject('BeObjectCache');
+            foreach ($path as $i => $oid) {
+                // Read objects permissions.
+                $res = $beObjectCache->read($oid, array(), 'perms');
+                if (!$res && !is_array($res)) {
+                    // Write object's permissions to cache.
+                    $res = $this->find('all', array(
+                        'conditions' => array('object_id' => $oid),
+                    ));
+                    $beObjectCache->write($oid, array(), $res, 'perms');
+                }
+
+                // Filter permissions.
+                $perms[$i] = array();
+                foreach ($res as $r) {
+                    if (!empty($userData) && !($r['switch'] == 'group' && in_array($r['ugid'], $groups)) && !($r['switch'] == 'user' && $r['ugid'] == $userData['id'])) {
+                        continue;
+                    }
+                    if (!empty($flags) && !in_array($r['flag'], $flags)) {
+                        continue;
+                    }
+                    array_push($perms[$i], $r);
+                }
             }
-            array_push($perms[$key], $perm);
+        } else {
+            // Read from DB.
+            $conditions = array(
+                'object_id' => $path,
+            );
+            if (!empty($userData)) {
+                $conditions['OR'] = array(
+                    'AND' => array('switch' => 'group', 'ugid' => $groups),
+                    'OR' => array(
+                        '0 = 1',
+                        'AND' => array('switch' => 'user', 'ugid' => $userData['id']),
+                    ),
+                );
+            }
+            if (!empty($flags)) {
+                $conditions['flag'] = $flags;
+            }
+
+            // Read permissions.
+            $res = $this->find('all', array(
+                'contain' => array(),
+                'conditions' => $conditions,
+            ));
+
+            // Format with hierarchy.
+            foreach ($res as $perm) {
+                $key = array_search($perm['object_id'], $path);
+                if (!array_key_exists($key, $perms)) {
+                    $perms = array();
+                }
+                array_push($perms[$key], $perm);
+            }
         }
+
         return $perms;
     }
 
     /**
-     * Load all object's permissions, without inheritance, that apply to the passed User.
+     * Load all object's permissions, without inheritance, that apply to the passed User, with the given `flags`.
      *
      * @param int $objectId Object ID.
      * @param array $userData User's data. If empty, retreives all permissions.
+     * @param int $flags Flags to search for.
      * @return array Object's permissions.
      * @see Permission::loadPath()
      */
-    public function load ($objectId, array $userData = null) {
-        $perms = $this->loadPath($objectId, $userData);
+    public function load ($objectId, array $userData = null, $flags = null) {
+        $perms = $this->loadPath($objectId, $userData, $flag);
         return $perms[0];
+    }
+
+    /**
+     * Checks whether an object has permissions with the given `flags`.
+     *
+     * @param int $objectId Object ID.
+     * @param int|array $flags Flags to search for.
+     * @return array|bool Object's permissions, or `false` if none are set.
+     * @see Permission::loadPath()
+     * @deprecated
+     */
+    public function isPermissionSet ($objectId, $flags) {
+        $perms = $this->load($objectId, null, $flags);
+        return count($perms) ? $perms : false;
     }
 
     /**
@@ -502,7 +551,7 @@ class Permission extends BEAppModel
 
     /**
      * Tells whether Object is readable by the User.
-     * 
+     *
      * @param array $perms Permission array as obtained from `Permission::loadPath()`.
      * @param array $userData User data array.
      * @return boolean Readable.
@@ -529,7 +578,7 @@ class Permission extends BEAppModel
 
     /**
      * Tells whether Object is accessible by User.
-     * 
+     *
      * @param int $objectId Object ID.
      * @param array $userData User data array.
      * @param array $perms Permission array as obtained from `Permission::loadPath()`.
@@ -566,51 +615,4 @@ class Permission extends BEAppModel
 
         return $count ? $levels[$perm] : 'free';
     }
-
-
-
-    /**************** \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ ****************/
-
-
-
-	/**
-	 * Check if an Object has permissions of the given type.
-	 *
-	 * @param integer $objectId Object ID.
-	 * @param array|integer $flag Permission flag.
-	 * @return array|boolean Array of permissions set, or `false` if none are found.
-	 */
-	public function isPermissionSet ($objectId, $flag) {
-		if (!is_array($flag)) {
-			$flag = array($flag);
-		}
-		// if frontend app (not staging) and object cache is active
-		if (!BACKEND_APP && Configure::read('objectCakeCache') && !Configure::read('staging')) {
-			$beObjectCache = BeLib::getObject('BeObjectCache');
-			$options = array();
-			$perms = $beObjectCache->read($objectId, $options, 'perms');
-			if (!$perms && !is_array($perms)) {
-				$perms = $this->find('all', array(
-					'conditions' => array('object_id' => $objectId)
-				));
-				$beObjectCache->write($objectId, $options, $perms, 'perms');
-			}
-			// search $flag inside $perms
-			$result = array();
-			if (!empty($perms)) {
-				foreach ($perms as $p) {
-					if (in_array($p['Permission']['flag'], $flag)) {
-						$result[] = $p;
-					}
-				}
-			}
-		} else {
-			$result = $this->find('all', array(
-				'conditions' => array('object_id' => $objectId, 'flag' => $flag)
-			));
-		}
-
-		$ret = (!empty($result)) ? $result : false;
-		return $ret;
-	}
 }
