@@ -22,11 +22,9 @@
 /**
  * Represents an Object's permissions.
  *
- * @version         $Revision$
- * @modifiedby      $LastChangedBy$
- * @lastmodified    $LastChangedDate$
+ * #574 - Permission system refactor.
  *
- * $Id$
+ * @link https://github.com/bedita/bedita/issues/574
  */
 class Permission extends BEAppModel
 {
@@ -80,7 +78,7 @@ class Permission extends BEAppModel
     /**
      * Formats a flag according to the standard format, ensuring it is well formed.
      *
-     * @param mixes $flag Flag. Can be either an `int`, or an array with keys `'read', 'write', 'noinherit'`.
+     * @param mixed $flag Flag. Can be either an `int`, or an array with keys `'read', 'write', 'backend', 'noinherit'`.
      * @return int Standardized flag.
      */
     private function formatFlag ($flag) {
@@ -104,6 +102,25 @@ class Permission extends BEAppModel
             return $res;
         }
         return 0;
+    }
+
+    /**
+     * Parses a flag and decodes its components.
+     *
+     * @param mixed $flag Flag. Can be either an `int`, or an array with keys `'read', 'write', 'backend', 'noinherit'`.
+     * @param string $part Which part of flag to return. Default: associative array with keys `'read', 'write', 'backend', 'noinherit'`.
+     * @return mixed Associative array with keys `'read', 'write', 'backend', 'noinherit'`, or only the required key.
+     */
+    public function parseFlag ($flag, $part = null) {
+        $flag = $this->formatFlag($flag);  // Ensure it is a valid flag.
+
+        $res = array(
+            'read' => ($flag << self::PERM_READ) & self::PERM_FULL,
+            'write' => ($flag << self::PERM_WRITE) & self::PERM_FULL,
+            'backend' => ($flag << self::PERM_BACKEND) & self::PERM_FULL,
+            'noinherit' => $flag & self::PERM_NOINHERIT,
+        );
+        return array_key_exists($part, $res) ? $res[$part] : $res;
     }
 
     /**
