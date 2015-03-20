@@ -126,7 +126,6 @@ function loadUserGroupAjax(url) {
 {/foreach}
             <td><input type="checkbox" name="data[Permission][{$i}][flag][noinherit]" value="1" readonly="readonly" {if $perm.parsedFlag.noinherit}checked="checked" {/if}/></td>
             <td style="text-align: right">
-                <input type="hidden" name="data[Permission][{$i}][flag]" value="{$perm.flag}"/>
                 <input type="button" name="deletePerms" value=" x "/>
             </td>
         </tr>
