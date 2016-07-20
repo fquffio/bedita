@@ -26,15 +26,7 @@
       tags: git
     - role: mysql
       tags: mysql
-    - role: apache
-      tags: apache
-    - role: elasticsearch
-      tags: elasticsearch
     - role: logstash
       tags: logstash
-    - role: kibana
-      tags: kibana
-    - role: redis
-      tags: redis
-    - role: composer
-      tags: composer
+    - role: php5
+      tags: php5

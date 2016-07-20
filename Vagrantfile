@@ -30,6 +30,37 @@ Vagrant.configure(2) do |config|
     vb.memory = memory
   end
 
+  # Start Docker containers
+  config.vm.provision :shell, inline: 'if [[ -x `which docker` ]] && [[ -n `docker ps -a -q` ]]; then docker rm -fv $(docker ps -a -q); fi'
+  config.vm.provision :docker do |docker|
+    docker.pull_images "mysql:5.6"
+    docker.run "mysql-5.6",
+      image: "mysql:5.6",
+      args: "-e MYSQL_ROOT_PASSWORD=root -e MYSQL_USER=bedita -e MYSQL_PASSWORD=bedita -e MYSQL_DATABASE=bedita_test -p 127.0.0.1:33060:3306"
+
+    docker.pull_images "mysql:5.7"
+    docker.run "mysql-5.7",
+      image: "mysql:5.7",
+      args: "-e MYSQL_ROOT_PASSWORD=root -e MYSQL_USER=bedita -e MYSQL_PASSWORD=bedita -e MYSQL_DATABASE=bedita_test -p 127.0.0.1:33070:3306"
+
+    docker.pull_images "postgres"
+    docker.run "postgres",
+      args: "-e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bedita_test -p 127.0.0.1:5432:5432"
+
+    docker.pull_images "redis"
+    docker.run "redis",
+      args: "-p 127.0.0.1:6379:6379"
+
+    docker.pull_images "chialab/elasticsearch:manager"
+    docker.run "elasticsearch",
+      image: "chialab/elasticsearch:manager",
+      args: "-p 9200:9200"
+
+    docker.pull_images "kibana"
+    docker.run "kibana",
+      args: "-p 5601:5601"
+  end
+
   # Install Ansible via PIP and Git via APT:
   config.vm.provision "shell", path: "provision/install_ansible.sh"
 
@@ -49,7 +80,5 @@ Vagrant.configure(2) do |config|
     if File.exists?("vars/vagrant.yml")
       ansible.extra_vars = "vars/vagrant.yml"
     end
-
-    ansible.skip_tags = ["letsencrypt", "letsencrypt-certificates"]
   end
 end

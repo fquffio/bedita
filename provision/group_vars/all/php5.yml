@@ -1,0 +1,12 @@
+---
+php5_extensions:
+  - curl
+  - gd
+  - intl
+  - mcrypt
+  - mysql
+  - pgsql
+  - redis
+  - sqlite
+  - xcache
+  - xdebug
