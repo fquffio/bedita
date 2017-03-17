@@ -71,7 +71,7 @@ class CorsMiddleware
 
         $allowedConfig = array_intersect_key($corsConfig, $this->corsConfig);
         $this->corsConfig = $allowedConfig + $this->corsConfig;
-        if ($this->corsConfig['allowMethods'] == '*') {
+        if ($this->corsConfig['allowMethods'] === '*') {
             $this->corsConfig['allowMethods'] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
         }
     }
@@ -88,21 +88,15 @@ class CorsMiddleware
      */
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
     {
-        if (!$this->isConfigured()) {
-            return $this->delegateToServer($request, $response, $next);
-        }
-
-        try {
-            if ($request->getMethod() == 'OPTIONS') {
+        if ($this->isConfigured()) {
+            if ($request->getMethod() === 'OPTIONS') {
                 return $this->preflight($request, $response);
             }
 
             $response = $this->buildCors($request, $response);
-
-            return $next($request, $response);
-        } catch (\Exception $e) {
-            return $response->withStatus($e->getCode());
         }
+
+        return $next($request, $response);
     }
 
     /**
@@ -112,43 +106,26 @@ class CorsMiddleware
      */
     public function isConfigured()
     {
-        return (bool)array_filter($this->corsConfig);
+        return !empty(array_filter($this->corsConfig));
     }
 
     /**
-     * Delegate to Server the CORS settings.
-     *
-     * On preflight requests the middleware stack will be interrupted and the response will be send.
-     * On other requests call next middleware.
-     * The server should take care to set the right headers.
+     * Prepare the response for a pre-flight request.
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request The request.
      * @param \Psr\Http\Message\ResponseInterface $response The response.
-     * @param callable $next The next middleware to call.
-     * @return \Psr\Http\Message\ResponseInterface A response.
-     */
-    protected function delegateToServer(ServerRequestInterface $request, ResponseInterface $response, callable $next)
-    {
-        return ($request->getMethod() == 'OPTIONS') ? $response : $next($request, $response);
-    }
-
-    /**
-     * Prepare the response for a preflight request.
-     *
-     * @param \Psr\Http\Message\ServerRequestInterface $request The request.
-     * @param \Psr\Http\Message\ResponseInterface $response The response.
-     * @return \Psr\Http\Message\ResponseInterface A response.
+     * @return \Psr\Http\Message\ResponseInterface Modified response.
      * @throws \Cake\Network\Exception\BadRequestException When the request is malformed
      */
     protected function preflight(ServerRequestInterface $request, ResponseInterface $response)
     {
         if (!$request->hasHeader('Origin')) {
-            throw new BadRequestException('Preflight request missing of "Origin" header');
+            throw new BadRequestException(__d('bedita', 'Preflight request missing of "{0}" header', 'Origin'));
         }
 
         $this->checkAccessControlRequestMethod($request);
 
-        if ($this->corsConfig['allowHeaders'] != '*') {
+        if ($this->corsConfig['allowHeaders'] !== '*') {
             $this->checkAccessControlRequestHeaders($request);
         }
 
@@ -167,12 +144,15 @@ class CorsMiddleware
     {
         $accessControlRequestMethod = $request->getHeaderLine('Access-Control-Request-Method');
         if (empty($accessControlRequestMethod)) {
-            throw new BadRequestException('Preflight request missing of "Access-Control-Request-Method" header');
+            throw new BadRequestException(
+                __d('bedita', 'Preflight request missing of "{0}" header', 'Access-Control-Request-Method')
+            );
         }
 
-        $allowedMethods = (array)$this->corsConfig['allowMethods'];
-        if (!in_array($accessControlRequestMethod, $allowedMethods)) {
-            throw new ForbiddenException('Preflight request refused. Access-Control-Request-Method not allowed');
+        if (!in_array($accessControlRequestMethod, (array)$this->corsConfig['allowMethods'])) {
+            throw new ForbiddenException(
+                __d('bedita', 'Preflight request refused. {0} not allowed', 'Access-Control-Request-Method')
+            );
         }
     }
 
@@ -185,18 +165,20 @@ class CorsMiddleware
      */
     protected function checkAccessControlRequestHeaders(ServerRequestInterface $request)
     {
-        $accessControlRequestHeaders = explode(', ', strtolower($request->getHeaderLine('Access-Control-Request-Headers')));
-        $allowedHeaders = array_map(
-            function ($header) {
-                return strtolower($header);
-            },
-            (array)$this->corsConfig['allowHeaders']
+        $accessControlRequestHeaders = preg_split('/,\s*/', $request->getHeaderLine('Access-Control-Request-Headers'));
+        $notAllowedHeaders = array_diff(
+            array_map('strtolower', $accessControlRequestHeaders),
+            array_map('strtolower', (array)$this->corsConfig['allowHeaders'])
         );
 
-        $notAllowedHeaders = array_diff($accessControlRequestHeaders, $allowedHeaders);
         if (!empty($notAllowedHeaders)) {
             throw new ForbiddenException(
-                'Preflight request refused. Access-Control-Request-Headers not allowed for ' . implode(', ', $notAllowedHeaders)
+                __d(
+                    'bedita',
+                    'Preflight request refused. {0} not allowed for {1}',
+                    'Access-Control-Request-Headers',
+                    implode(', ', $notAllowedHeaders)
+                )
             );
         }
     }
@@ -214,14 +196,14 @@ class CorsMiddleware
     protected function buildCors(ServerRequestInterface $request, ResponseInterface $response, $preflight = false)
     {
         $origin = $request->getHeaderLine('Origin');
-        $isSsl = ($request->getUri()->getScheme() == 'https');
+        $isSsl = ($request->getUri()->getScheme() === 'https');
 
         $corsBuilder = new CorsBuilder($response, $origin, $isSsl);
 
         $options = array_filter($this->corsConfig);
         if (!$preflight) {
             $options = array_diff_key($options, array_flip(['allowMethods', 'allowHeaders', 'maxAge']));
-        } elseif ($options['allowHeaders'] == '*') {
+        } elseif ($options['allowHeaders'] === '*') {
             $options['allowHeaders'] = $request->getHeader('Access-Control-Request-Headers');
         }
 
@@ -231,7 +213,7 @@ class CorsMiddleware
 
         $response = $corsBuilder->build();
         if (!empty($origin) && !$response->hasHeader('Access-Control-Allow-Origin')) {
-            throw new ForbiddenException('Origin not allowed');
+            throw new ForbiddenException(__d('bedita', 'Origin not allowed'));
         }
 
         return $response;
