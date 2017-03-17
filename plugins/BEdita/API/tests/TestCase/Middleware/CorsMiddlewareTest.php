@@ -311,24 +311,19 @@ class CorsMiddlewareTest extends TestCase
             ->add($middleware);
         $response = (new Runner())->run($middlewareQueue, $request, $response);
 
-        $this->assertEquals($expectedStatus, $response->getStatusCode());
+        static::assertSame(!empty($corsConfig), $middleware->isConfigured());
+        static::assertEquals($expectedStatus, $response->getStatusCode());
 
-        if (empty($corsConfig)) {
-            $this->assertFalse($middleware->isConfigured());
-            $this->assertEmpty($response->getHeader('Access-Control-Allow-Origin'));
-            $this->assertEmpty($response->getHeader('Access-Control-Allow-Methods'));
-            $this->assertEmpty($response->getHeader('Access-Control-Allow-Credentials'));
-            $this->assertEmpty($response->getHeader('Access-Control-Allow-Headers'));
-            $this->assertEmpty($response->getHeader('Access-Control-Expose-Headers'));
-            $this->assertEmpty($response->getHeader('Access-Control-Max-Age'));
-        } else {
-            $this->assertTrue($middleware->isConfigured());
-            foreach ($expectedCorsHeaders as $header => $value) {
-                $this->assertEquals(
-                    $value,
-                    $response->getHeaderLine($header)
-                );
-            }
+        $expectedCorsHeaders += [
+            'Access-Control-Allow-Origin' => '',
+            'Access-Control-Allow-Methods' => '',
+            'Access-Control-Allow-Credentials' => '',
+            'Access-Control-Allow-Headers' => '',
+            'Access-Control-Expose-Headers' => '',
+            'Access-Control-Max-Age' => '',
+        ];
+        foreach ($expectedCorsHeaders as $header => $value) {
+            static::assertSame($value, $response->getHeaderLine($header));
         }
     }
 }
