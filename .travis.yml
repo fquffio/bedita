@@ -48,17 +48,17 @@ jobs:
     # Reference tests set with coverage: PHP 7.1 with MySQL 5.7, SQlite and PostgreSQL 9.6 + PostGIS
     - stage: reference
       php: 7.1
-      env: "DB=mysql DB_VERSION=5.7 db_dsn='mysql://root@localhost/bedita_test'"
+      env: "DB=mysql DB_VERSION=5.7 db_dsn='mysql://root@localhost/bedita_test' COVERAGE=1"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
       after_success: bash <(curl -s https://codecov.io/bash)
     - stage: reference
       php: 7.1
-      env: "DB=sqlite db_dsn='sqlite:///tmp/test.sql'"
+      env: "DB=sqlite db_dsn='sqlite:///tmp/test.sql' COVERAGE=1"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
       after_success: bash <(curl -s https://codecov.io/bash)
     - stage: reference
       php: 7.1
-      env: "DB=pgsql DB_VERSION=9.6 DB_POSTGIS=1 db_dsn='postgres://postgres@127.0.0.1/bedita_test'"
+      env: "DB=pgsql DB_VERSION=9.6 DB_POSTGIS=1 db_dsn='postgres://postgres@127.0.0.1/bedita_test' COVERAGE=1"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
       after_success: bash <(curl -s https://codecov.io/bash)
 
@@ -138,6 +138,10 @@ install:
 
 before_script:
   # Enable required PHP Extensions.
+  - |
+    if [ "$COVERAGE" != '1' ]; then
+      phpenv config-rm xdebug.ini
+    fi
   - |
     if [ "$TRAVIS_PHP_VERSION" != 'hhvm' ]; then
       echo 'extension = memcached.so' >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
