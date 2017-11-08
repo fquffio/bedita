@@ -33,7 +33,7 @@ class ObjectTypesValidator extends Validator
         parent::__construct();
 
         $this->setProvider('table', TableRegistry::get('ObjectTypes'));
-        $this->setProvider('reserved', new NotReserved());
+        $this->setProvider('bedita', Validation::class);
 
         $this
             ->integer('id')
@@ -43,7 +43,7 @@ class ObjectTypesValidator extends Validator
             ->requirePresence('name', 'create')
             ->notEmpty('name')
             ->add('name', 'unique', ['rule' => 'validateUnique', 'provider' => 'table'])
-            ->add('name', 'notReserved', ['rule' => 'allowed', 'provider' => 'reserved']);
+            ->add('name', 'notReserved', ['rule' => 'notReserved', 'provider' => 'bedita']);
 
         $this
             ->requirePresence('singular', 'create')
@@ -59,7 +59,7 @@ class ObjectTypesValidator extends Validator
                 'message' => __d('bedita', 'Name and singular fields must be different')
             ])
             ->add('singular', 'unique', ['rule' => 'validateUnique', 'provider' => 'table'])
-            ->add('singular', 'notReserved', ['rule' => 'allowed', 'provider' => 'reserved']);
+            ->add('singular', 'notReserved', ['rule' => 'notReserved', 'provider' => 'bedita']);
 
         $this
             ->allowEmpty('description');
