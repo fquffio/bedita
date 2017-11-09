@@ -57,17 +57,26 @@ jobs:
       php: 7.1
       env: "DB=mysql DB_VERSION=5.7 db_dsn='mysql://root@localhost/bedita_test'"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
-      after_success: bash <(curl -s https://codecov.io/bash)
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+        - composer require php-coveralls/php-coveralls
+        - vendor/bin/coveralls -v
     - stage: reference
       php: 7.1
       env: "DB=sqlite db_dsn='sqlite:///tmp/test.sql'"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
-      after_success: bash <(curl -s https://codecov.io/bash)
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+        - composer require php-coveralls/php-coveralls
+        - vendor/bin/coveralls -v
     - stage: reference
       php: 7.1
       env: "DB=pgsql DB_VERSION=9.6 DB_POSTGIS=1 db_dsn='postgres://postgres@127.0.0.1/bedita_test'"
       script: vendor/bin/phpunit --coverage-clover=clover.xml
-      after_success: bash <(curl -s https://codecov.io/bash)
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+        - composer require php-coveralls/php-coveralls
+        - vendor/bin/coveralls -v
 
     # Complete tests suite: SQLite on PHP 5.6 with lowest dependencies, * MySQL 5.7 on PHP 5.6,
     #    PostgreSQL 9.6 on PHP 5.6/7.0, MySQL 5.6 and PostgreSQL 9.5 on PHP 7.1, static code analyzer.
