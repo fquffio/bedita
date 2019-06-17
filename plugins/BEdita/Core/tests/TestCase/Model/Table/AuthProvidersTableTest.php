@@ -113,6 +113,13 @@ class AuthProvidersTableTest extends TestCase
                     'url' => 'this is not a URL',
                 ],
             ],
+            'URL without protocol' => [
+                false,
+                [
+                    'name' => 'some_unique_value',
+                    'url' => 'www.example.com/without/protocol.json?shouldBeValid=no',
+                ],
+            ],
         ];
     }
 
