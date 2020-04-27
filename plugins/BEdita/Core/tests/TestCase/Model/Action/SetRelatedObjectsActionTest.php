@@ -36,15 +36,17 @@ class SetRelatedObjectsActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.roles_users',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.RolesUsers',
     ];
 
     /**
@@ -132,12 +134,12 @@ class SetRelatedObjectsActionTest extends TestCase
                 ],
             ],
             'update' => [
-                [4],
-                'Documents',
-                'test',
-                3,
+                [2, 3],
+                'Profiles',
+                'inverse_test',
+                4,
                 [
-                    4 => [
+                    3 => [
                         'priority' => 1,
                         'inv_priority' => 1,
                         'params' => [
@@ -183,7 +185,7 @@ class SetRelatedObjectsActionTest extends TestCase
         }
 
         $alias = Inflector::camelize(Inflector::underscore($relation));
-        $association = TableRegistry::get($objectType)->association($alias);
+        $association = TableRegistry::getTableLocator()->get($objectType)->getAssociation($alias);
         $action = new SetRelatedObjectsAction(compact('association'));
 
         $entity = $association->getSource()->get($id);
@@ -216,7 +218,7 @@ class SetRelatedObjectsActionTest extends TestCase
      */
     public function testInvocationFallback()
     {
-        $association = TableRegistry::get('Users')->association('Roles');
+        $association = TableRegistry::getTableLocator()->get('Users')->getAssociation('Roles');
         $entity = $association->getSource()->get(1);
         $relatedEntities = $association->getTarget()->find()->toArray();
 

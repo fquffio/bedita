@@ -21,6 +21,7 @@ use Cake\Event\Event;
 use Cake\Event\EventManager;
 use Cake\I18n\Time;
 use Cake\Mailer\Email;
+use Cake\Mailer\TransportFactory;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 
@@ -38,15 +39,15 @@ class ChangeCredentialsActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.async_jobs',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.AsyncJobs',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
     ];
 
     /**
@@ -56,8 +57,8 @@ class ChangeCredentialsActionTest extends TestCase
     {
         parent::setUp();
 
-        Email::dropTransport('default');
-        Email::setConfigTransport('default', [
+        TransportFactory::drop('default');
+        TransportFactory::setConfig('default', [
             'className' => 'Debug'
         ]);
     }
@@ -69,10 +70,10 @@ class ChangeCredentialsActionTest extends TestCase
      */
     protected function createTestJob()
     {
-        $action = new SaveEntityAction(['table' => TableRegistry::get('AsyncJobs')]);
+        $action = new SaveEntityAction(['table' => TableRegistry::getTableLocator()->get('AsyncJobs')]);
 
         return $action([
-            'entity' => TableRegistry::get('AsyncJobs')->newEntity(),
+            'entity' => TableRegistry::getTableLocator()->get('AsyncJobs')->newEntity(),
             'data' => [
                 'service' => 'credentials_change',
                 'payload' => [
@@ -113,7 +114,7 @@ class ChangeCredentialsActionTest extends TestCase
         $action = new ChangeCredentialsAction();
         $res = $action($data);
 
-        $user = TableRegistry::get('Users')->get(1, ['contain' => ['Roles']]);
+        $user = TableRegistry::getTableLocator()->get('Users')->get(1, ['contain' => ['Roles']]);
         static::assertEquals($res->id, $user->id);
         static::assertEquals($res->username, $user->username);
         static::assertSame(1, $eventDispatched, 'Event not dispatched');
@@ -126,7 +127,7 @@ class ChangeCredentialsActionTest extends TestCase
      *
      * @covers ::execute()
      * @covers ::validate()
-     * @expectedException \Cake\Network\Exception\BadRequestException
+     * @expectedException \Cake\Http\Exception\BadRequestException
      */
     public function testValidationFail()
     {

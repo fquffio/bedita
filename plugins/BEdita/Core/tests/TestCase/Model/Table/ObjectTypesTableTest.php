@@ -15,10 +15,11 @@ namespace BEdita\Core\Test\TestCase\Model\Table;
 
 use BEdita\Core\Exception\BadFilterException;
 use BEdita\Core\Model\Table\ObjectTypesTable;
+use BEdita\Core\Utility\LoggedUser;
 use Cake\Cache\Cache;
 use Cake\Datasource\Exception\RecordNotFoundException;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\ForbiddenException;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\ForbiddenException;
 use Cake\ORM\Association\HasMany;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
@@ -45,15 +46,16 @@ class ObjectTypesTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.History',
     ];
 
     /**
@@ -66,7 +68,7 @@ class ObjectTypesTableTest extends TestCase
         Cache::drop('_bedita_object_types_');
         Cache::setConfig('_bedita_object_types_', ['className' => 'File']);
 
-        $this->ObjectTypes = TableRegistry::get('ObjectTypes');
+        $this->ObjectTypes = TableRegistry::getTableLocator()->get('ObjectTypes');
     }
 
     /**
@@ -249,7 +251,7 @@ class ObjectTypesTableTest extends TestCase
                     'description' => null,
                     'alias' => 'Documents',
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'relations' => [
                         'test',
@@ -272,7 +274,7 @@ class ObjectTypesTableTest extends TestCase
                     'description' => null,
                     'alias' => 'Documents',
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'relations' => [
                         'test',
@@ -295,7 +297,7 @@ class ObjectTypesTableTest extends TestCase
                     'description' => null,
                     'alias' => 'Documents',
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'relations' => [
                         'test',
@@ -318,7 +320,7 @@ class ObjectTypesTableTest extends TestCase
                     'description' => null,
                     'alias' => 'Documents',
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'relations' => [
                         'test',
@@ -341,7 +343,7 @@ class ObjectTypesTableTest extends TestCase
                     'description' => null,
                     'alias' => 'Documents',
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'relations' => [
                         'test',
@@ -541,7 +543,7 @@ class ObjectTypesTableTest extends TestCase
     public function testFindAll()
     {
         $query = $this->ObjectTypes->find();
-        $contain = $query->contain();
+        $contain = $query->getContain();
 
         static::assertArrayHasKey('LeftRelations', $contain);
         static::assertArrayHasKey('RightRelations', $contain);
@@ -664,7 +666,7 @@ class ObjectTypesTableTest extends TestCase
         $data = [
             'title' => 'Foo',
         ];
-        $table = TableRegistry::get('Foos');
+        $table = TableRegistry::getTableLocator()->get('Foos');
         $entity = $table->newEntity();
         $entity = $table->patchEntity($entity, $data);
         $entity->created_by = 1;
@@ -682,7 +684,7 @@ class ObjectTypesTableTest extends TestCase
      * @return void
      * @covers ::beforeRules()
      *
-     * @expectedException \Cake\Network\Exception\ForbiddenException
+     * @expectedException \Cake\Http\Exception\ForbiddenException
      * @expectedExceptionMessage Parent type change forbidden: objects of this type exist
      */
     public function testChangeParent()

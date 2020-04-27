@@ -167,7 +167,7 @@ return [
      * - `skipLog` - array - List of exceptions to skip for logging. Exceptions that
      *   extend one of the listed exceptions will also be skipped for logging.
      *   E.g.:
-     *   `'skipLog' => ['Cake\Network\Exception\NotFoundException', 'Cake\Network\Exception\UnauthorizedException']`
+     *   `'skipLog' => ['Cake\Http\Exception\NotFoundException', 'Cake\Http\Exception\UnauthorizedException']`
      * - `extraFatalErrorMemory` - int - The number of megabytes to increase
      *   the memory limit by when a fatal error is encountered. This allows
      *   breathing room to complete logging or error handling.
@@ -261,7 +261,7 @@ return [
             'password' => '__BE4_DB_PASSWORD__',
             'database' => '__BE4_DB_DATABASE__',
             'encoding' => 'utf8',
-            'timezone' => 'UTC',
+            'timezone' => env('BEDITA_DEFAULT_TIMEZONE', 'UTC'),
             'persistent' => false,
             'flags' => [],
             'cacheMetadata' => true,
@@ -302,7 +302,7 @@ return [
             'password' => 'bedita',
             'database' => 'bedita_test',
             'encoding' => 'utf8',
-            'timezone' => 'UTC',
+            'timezone' => env('BEDITA_DEFAULT_TIMEZONE', 'UTC'),
             'cacheMetadata' => true,
             'quoteIdentifiers' => false,
             'log' => false,
@@ -395,21 +395,21 @@ return [
      * - `autoload` - boolean - (default: false) Whether or not you want an autoloader registered
      */
     'Plugins' => [
-        'BEdita/DevTools' => ['debugOnly' => true, 'bootstrap' => true],
+        // 'BEdita/DevTools' => ['debugOnly' => true, 'bootstrap' => true],
 //      'MyPlugin' => ['autoload' => true, 'bootstrap' => true, 'routes' => true],
     ],
 
     /**
-     * Default pagination settings.
+     * Default pagination settings. Uncomment to change.
      *
      * - `limit` - Default number of items per page (page_size). Defaults to 20.
      * - `maxLimit` - The maximum numer of items retrievable using a `page_size` request per call. Defaults to 100.
-     *   This value cannot exceed a superlimit (@see \BEdita\API\Controller\Component\PaginatorComponent::MAX_LIMIT))
+     *   This value cannot exceed a superlimit (@see \BEdita\API\Datasource\JsonApiPaginator::MAX_LIMIT))
      */
-    'Pagination' => [
-        'limit' => 20,
-        'maxLimit' => 100,
-    ],
+    // 'Pagination' => [
+    //     'limit' => 20,
+    //     'maxLimit' => 100,
+    // ],
 
     /**
      * Project information.
@@ -528,6 +528,15 @@ return [
         // default lang tag - may be null
         'default' => null,
     ],
+
+    /**
+     * Uncomment to define custom actions to load
+     * This way some action beahavior can be overridden
+     */
+    // 'Actions' => [
+    //     'SignupUserAction' => '\MyPlugin\Model\Action\SignupUserAction',
+    //     'SignupUserActivationAction' => '\MyPlugin\Model\Action\SignupUserActivationAction',
+    // ],
 
     /**
      * Default values per object type

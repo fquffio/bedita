@@ -32,12 +32,12 @@ class UserModifiedBehaviorTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
     ];
 
     /**
@@ -55,7 +55,7 @@ class UserModifiedBehaviorTest extends TestCase
         parent::setUp();
 
         LoggedUser::setUser(['id' => 1]);
-        $this->Objects = TableRegistry::get('Objects');
+        $this->Objects = TableRegistry::getTableLocator()->get('Objects');
     }
 
     /**

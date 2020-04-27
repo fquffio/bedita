@@ -39,18 +39,18 @@ class ObjectEntityTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.trees',
-        'plugin.BEdita/Core.object_relations',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.Trees',
+        'plugin.BEdita/Core.ObjectRelations',
     ];
 
     /**
@@ -60,7 +60,9 @@ class ObjectEntityTest extends TestCase
     {
         parent::setUp();
 
-        $this->Objects = TableRegistry::get('Objects');
+        $this->Objects = TableRegistry::getTableLocator()->get('Objects');
+
+        $this->loadPlugins(['BEdita/API' => ['routes' => true]]);
     }
 
     /**
@@ -215,7 +217,7 @@ class ObjectEntityTest extends TestCase
      * @param int $objectTypeId Object type ID.
      * @return void
      *
-     * @covers ::visibleProperties()
+     * @covers ::getVisible()
      * @covers ::loadObjectType()
      * @dataProvider visiblePropertiesProvider()
      */
@@ -227,7 +229,7 @@ class ObjectEntityTest extends TestCase
         foreach ($properties as $prop) {
             $entity->set($prop, $prop);
         }
-        $visible = $entity->visibleProperties();
+        $visible = $entity->getVisible();
 
         static::assertSame($expectedVisible, array_values($visible));
     }
@@ -390,7 +392,7 @@ class ObjectEntityTest extends TestCase
             'translations',
         ];
 
-        $entity = TableRegistry::get('Documents')->newEntity();
+        $entity = TableRegistry::getTableLocator()->get('Documents')->newEntity();
         $entity->set('type', 'documents');
         $entity = $entity->jsonApiSerialize();
 
@@ -437,7 +439,7 @@ class ObjectEntityTest extends TestCase
             ],
         ];
 
-        $entity = TableRegistry::get('Users')->newEntity();
+        $entity = TableRegistry::getTableLocator()->get('Users')->newEntity();
         $entity->set('id', 1);
         $entity->set('type', 'users');
         $entity = $entity->jsonApiSerialize();
@@ -463,7 +465,7 @@ class ObjectEntityTest extends TestCase
             'translations',
         ];
 
-        $entity = TableRegistry::get('Documents')->association('Test')->newEntity();
+        $entity = TableRegistry::getTableLocator()->get('Documents')->getAssociation('Test')->newEntity();
         $entity->set('type', 'profile');
         $entity = $entity->jsonApiSerialize();
 
@@ -490,7 +492,7 @@ class ObjectEntityTest extends TestCase
             'translations',
         ];
 
-        $entity = TableRegistry::get('Objects')->newEntity();
+        $entity = TableRegistry::getTableLocator()->get('Objects')->newEntity();
         $entity->set('type', 'folders');
         $entity = $entity->jsonApiSerialize();
 
@@ -510,7 +512,7 @@ class ObjectEntityTest extends TestCase
      */
     public function testGetRelationshipsDeleted()
     {
-        $entity = TableRegistry::get('Documents')->newEntity();
+        $entity = TableRegistry::getTableLocator()->get('Documents')->newEntity();
         $entity->set('type', 'documents');
         $entity->set('deleted', true);
         $entity = $entity->jsonApiSerialize();
@@ -527,7 +529,7 @@ class ObjectEntityTest extends TestCase
      */
     public function testGetRelationshipsIncluded()
     {
-        $entity = TableRegistry::get('Documents')->get(2, ['contain' => ['Test']]);
+        $entity = TableRegistry::getTableLocator()->get('Documents')->get(2, ['contain' => ['Test']]);
         $entity = $entity->jsonApiSerialize();
 
         static::assertArrayHasKey('relationships', $entity);
@@ -547,7 +549,7 @@ class ObjectEntityTest extends TestCase
      */
     public function testGetRelationshipsSingleIncluded()
     {
-        $entity = TableRegistry::get('Folders')->get(12, ['contain' => ['Parents']]);
+        $entity = TableRegistry::getTableLocator()->get('Folders')->get(12, ['contain' => ['Parents']]);
         $entity = $entity->jsonApiSerialize();
 
         static::assertArrayHasKey('relationships', $entity);
@@ -556,5 +558,28 @@ class ObjectEntityTest extends TestCase
 
         static::assertArrayHasKey('included', $entity);
         static::assertEquals(1, count($entity['included']));
+    }
+
+    /**
+     * Test `hasProperty` method
+     *
+     * @covers ::hasProperty()
+     * @return bool
+     */
+    public function testHasProperty()
+    {
+        $entity = TableRegistry::getTableLocator()->get('Documents')->get(2);
+
+        // core property
+        static::assertTrue($entity->hasProperty('title'));
+        // custom property
+        static::assertTrue($entity->hasProperty('another_title'));
+        // missing property
+        static::assertFalse($entity->hasProperty('some_property'));
+        // hidden property
+        static::assertTrue($entity->hasProperty('deleted'));
+        static::assertFalse($entity->hasProperty('deleted', false));
+        // virtual property
+        static::assertTrue($entity->hasProperty('type', false, true));
     }
 }

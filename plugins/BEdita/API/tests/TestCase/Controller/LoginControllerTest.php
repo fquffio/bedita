@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2017 ChannelWeb Srl, Chialab Srl
+ * Copyright 2019 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -47,6 +47,7 @@ class LoginControllerTest extends IntegrationTestCase
      * @return string A valid JWT.
      *
      * @covers ::login()
+     * @covers ::identify()
      * @covers ::reducedUserData()
      * @covers ::jwtTokens()
      */
@@ -62,7 +63,7 @@ class LoginControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(200);
 
-        $lastLogin = TableRegistry::get('Users')->get(1)->get('last_login');
+        $lastLogin = TableRegistry::getTableLocator()->get('Users')->get(1)->get('last_login');
         static::assertNotNull($lastLogin);
         static::assertEquals(Time::now()->timestamp, $lastLogin->timestamp, '', 1);
 
@@ -101,6 +102,7 @@ class LoginControllerTest extends IntegrationTestCase
      *
      * @depends testLoginOkJson
      * @covers ::login()
+     * @covers ::identify()
      * @covers \BEdita\API\Auth\JwtAuthenticate::authenticate()
      */
     public function testSuccessfulRenew(array $meta)
@@ -123,11 +125,50 @@ class LoginControllerTest extends IntegrationTestCase
     }
 
     /**
+     * Test renew token failure.
+     *
+     * @param array $meta Login metadata.
+     * @return void
+     *
+     * @depends testLoginOkJson
+     * @covers ::login()
+     * @covers ::identify()
+     * @covers \BEdita\API\Auth\JwtAuthenticate::authenticate()
+     */
+    public function testFailedRenew(array $meta)
+    {
+        sleep(1);
+
+        // block user
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->get(1);
+        $user->blocked = true;
+        $usersTable->saveOrFail($user);
+
+        $this->configRequest([
+            'headers' => [
+                'Host' => 'api.example.com',
+                'Accept' => 'application/vnd.api+json',
+                'Authorization' => sprintf('Bearer %s', $meta['renew']),
+            ],
+        ]);
+
+        $this->post('/auth', []);
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertResponseCode(401);
+        static::assertArrayHasKey('error', $result);
+        static::assertEquals('Login request not successful', $result['error']['title']);
+        static::assertEquals('401', $result['error']['status']);
+    }
+
+    /**
      * Test login method with invalid credentials
      *
      * @return void
      *
      * @covers ::login()
+     * @covers ::identify()
      */
     public function testFailedLogin()
     {
@@ -161,12 +202,13 @@ class LoginControllerTest extends IntegrationTestCase
      * @return void
      *
      * @covers ::login()
+     * @covers ::identify()
      */
     public function testLoginAuthorizationDenied()
     {
         // Permissions on endpoint `/auth` for application id 2 and role 2 is 0b0001 --> write NO, read MINE
         // POST /auth with role id 2 on application id 2 MUST fail
-        CurrentApplication::setApplication(TableRegistry::get('Applications')->get(2));
+        CurrentApplication::setApplication(TableRegistry::getTableLocator()->get('Applications')->get(2));
 
         $this->configRequestHeaders('POST', ['Content-Type' => 'application/json']);
 
@@ -217,6 +259,41 @@ class LoginControllerTest extends IntegrationTestCase
         $this->assertResponseCode(200);
         $result2 = json_decode((string)$this->_response->getBody(), true);
         $this->assertEquals($result['data']['attributes'], $result2['data']['attributes']);
+    }
+
+    /**
+     * Test read logged user blocked failure.
+     *
+     * @return void
+     *
+     * @depends testLoginOkJson
+     * @covers ::whoami()
+     * @covers ::userEntity()
+     */
+    public function testLoggedUserBlocked(array $meta)
+    {
+        sleep(1);
+
+        // block user
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->get(1);
+        $user->blocked = true;
+        $usersTable->saveOrFail($user);
+
+        $headers = [
+            'Host' => 'api.example.com',
+            'Accept' => 'application/vnd.api+json',
+            'Authorization' => sprintf('Bearer %s', $meta['jwt']),
+        ];
+
+        $this->configRequest(compact('headers'));
+        $this->get('/auth/user');
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertResponseCode(401);
+        $expected = self::NOT_SUCCESSFUL_EXPECTED_RESULT;
+        $expected['error']['title'] = 'Request not authorized';
+        static::assertEquals($expected, Hash::remove($result, 'error.meta'));
     }
 
     /**
@@ -303,8 +380,8 @@ class LoginControllerTest extends IntegrationTestCase
      */
     protected function removePermissions()
     {
-        TableRegistry::get('EndpointPermissions')->deleteAll(['endpoint_id' => 1]);
-        TableRegistry::get('EndpointPermissions')->deleteAll(['endpoint_id IS NULL']);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['endpoint_id' => 1]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['endpoint_id IS NULL']);
     }
 
     /**
@@ -325,10 +402,9 @@ class LoginControllerTest extends IntegrationTestCase
         ];
 
         $this->post('/auth/change', json_encode($data));
-        $result = json_decode((string)$this->_response->getBody(), true);
 
         $this->assertResponseCode(204);
-        $this->assertEmpty($result);
+        $this->assertResponseEmpty();
     }
 
     /**
@@ -338,10 +414,10 @@ class LoginControllerTest extends IntegrationTestCase
      */
     protected function createTestJob()
     {
-        $action = new SaveEntityAction(['table' => TableRegistry::get('AsyncJobs')]);
+        $action = new SaveEntityAction(['table' => TableRegistry::getTableLocator()->get('AsyncJobs')]);
 
         return $action([
-            'entity' => TableRegistry::get('AsyncJobs')->newEntity(),
+            'entity' => TableRegistry::getTableLocator()->get('AsyncJobs')->newEntity(),
             'data' => [
                 'service' => 'credentials_change',
                 'payload' => [
@@ -428,7 +504,7 @@ class LoginControllerTest extends IntegrationTestCase
     public function testUpdate(array $meta)
     {
         // set email to NULL to be able to change it
-        $table = TableRegistry::get('Users');
+        $table = TableRegistry::getTableLocator()->get('Users');
         $user = $table->get(1);
         $user->set('email', null);
         $table->saveOrFail($user);
@@ -527,7 +603,7 @@ class LoginControllerTest extends IntegrationTestCase
      */
     public function testBlockedLogin()
     {
-        $usersTable = TableRegistry::get('Users');
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
         $user = $usersTable->get(5);
         $user->blocked = true;
         $usersTable->saveOrFail($user);
@@ -576,7 +652,7 @@ class LoginControllerTest extends IntegrationTestCase
      */
     public function testStatus($expected, $status)
     {
-        $usersTable = TableRegistry::get('Users');
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
         $user = $usersTable->get(5);
         $user->set('status', $status);
         $usersTable->saveOrFail($user);
@@ -676,6 +752,7 @@ class LoginControllerTest extends IntegrationTestCase
      *
      * @return void
      * @covers ::login()
+     * @covers ::identify()
      */
     public function testOTPRequestLogin()
     {
@@ -706,10 +783,37 @@ class LoginControllerTest extends IntegrationTestCase
     }
 
     /**
+     * Test `otp_request` failure.
+     *
+     * @return void
+     * @covers ::login()
+     * @covers ::identify()
+     */
+    public function testOTPRequestFail()
+    {
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->get(5);
+        $user->deleted = true;
+        $usersTable->saveOrFail($user);
+
+        $this->configRequestHeaders('POST', ['Content-Type' => 'application/json']);
+        $this->post('/auth', json_encode([
+            'username' => 'second user',
+            'grant_type' => 'otp_request',
+        ]));
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertResponseCode(401);
+        static::assertNotEmpty($result);
+        static::assertEquals(self::NOT_SUCCESSFUL_EXPECTED_RESULT, Hash::remove($result, 'error.meta'));
+    }
+
+    /**
      * Test actual `otp` (One Time Password) login.
      *
      * @return void
      * @covers ::login()
+     * @covers ::identify()
      */
     public function testOTPLogin()
     {
@@ -726,5 +830,103 @@ class LoginControllerTest extends IntegrationTestCase
         $this->assertResponseCode(200);
         static::assertNotEmpty($result['meta']['jwt']);
         static::assertNotEmpty($result['meta']['renew']);
+    }
+
+    /**
+     * Test `otp` login failure.
+     *
+     * @return void
+     * @covers ::login()
+     */
+    public function testOTPFail()
+    {
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->get(5);
+        $user->status = 'off';
+        $usersTable->saveOrFail($user);
+
+        $this->configRequestHeaders('POST', ['Content-Type' => 'application/json']);
+        $this->post('/auth', json_encode([
+            'username' => 'second user',
+            'authorization_code' => 'toktoktoktoktok',
+            'token' => 'secretsecretsecret',
+            'grant_type' => 'otp',
+        ]));
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertResponseCode(401);
+        static::assertNotEmpty($result);
+        static::assertEquals(self::NOT_SUCCESSFUL_EXPECTED_RESULT, Hash::remove($result, 'error.meta'));
+    }
+
+    /**
+     * Data provider for `testOptout` test case.
+     *
+     * @return array
+     */
+    public function optoutProvider()
+    {
+        return [
+            'ok' => [
+                204,
+                [
+                    'username' => 'second user',
+                    'password' => 'password2',
+                ],
+            ],
+            'auth code' => [
+                [
+                    'meta' => [
+                        'authorization_code' => 1,
+                    ],
+                ],
+                [
+                    'username' => 'second user',
+                    'grant_type' => 'otp_request',
+                ],
+            ],
+            'unauth' => [
+                self::NOT_SUCCESSFUL_EXPECTED_RESULT,
+                [
+                    'username' => 'second user',
+                    'password' => 'wrongPassword',
+                ],
+            ]
+        ];
+    }
+
+    /**
+     * Test `optout` method
+     *
+     * @param mixed $expected Expected result
+     * @param array $data POST data
+     * @return void
+     *
+     * @dataProvider optoutProvider()
+     * @covers ::optout()
+     * @covers ::initialize()
+     * @covers ::identify()
+     */
+    public function testOptout($expected, $data)
+    {
+        $this->configRequestHeaders('POST', ['Content-Type' => 'application/json']);
+        $this->post('/auth/optout', json_encode($data));
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        if (is_int($expected)) {
+            $this->assertResponseCode($expected);
+            static::assertEmpty($result);
+        } elseif (!empty($expected['meta']['authorization_code'])) {
+            $this->assertResponseCode(200);
+            unset($result['links']);
+            static::assertNotEmpty($result['meta']['authorization_code']);
+            $expected['meta']['authorization_code'] = $result['meta']['authorization_code'];
+            static::assertEquals($expected, $result);
+        } else {
+            unset($result['links'], $result['error']['meta']);
+            $this->assertResponseCode((int)$result['error']['status']);
+            unset($expected['links']);
+            static::assertEquals($expected, $result);
+        }
     }
 }

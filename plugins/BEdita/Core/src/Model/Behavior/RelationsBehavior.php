@@ -106,7 +106,7 @@ class RelationsBehavior extends Behavior
 
         // Add relations to the left side.
         foreach ($objectType->getRelations('left') as $relation) {
-            if ($this->getTable()->association($relation->alias) !== null) {
+            if ($this->getTable()->hasAssociation($relation->alias) === true) {
                 continue;
             }
 
@@ -115,7 +115,7 @@ class RelationsBehavior extends Behavior
                 $className = $relation->right_object_types[0]->table;
             }
 
-            $through = TableRegistry::get(
+            $through = TableRegistry::getTableLocator()->get(
                 $relation->alias . 'ObjectRelations',
                 ['className' => 'ObjectRelations']
             );
@@ -126,7 +126,7 @@ class RelationsBehavior extends Behavior
 
             $this->relatedTo($relation->alias, [
                 'className' => $className,
-                'through' => $through->getRegistryAlias(),
+                'through' => $through,
                 'foreignKey' => 'left_id',
                 'targetForeignKey' => 'right_id',
                 'conditions' => [
@@ -141,7 +141,7 @@ class RelationsBehavior extends Behavior
 
         // Add relations to the right side.
         foreach ($objectType->getRelations('right') as $relation) {
-            if ($this->getTable()->association($relation->inverse_alias) !== null) {
+            if ($this->getTable()->hasAssociation($relation->inverse_alias) === true) {
                 continue;
             }
 
@@ -150,7 +150,7 @@ class RelationsBehavior extends Behavior
                 $className = $relation->left_object_types[0]->table;
             }
 
-            $through = TableRegistry::get(
+            $through = TableRegistry::getTableLocator()->get(
                 $relation->inverse_alias . 'ObjectRelations',
                 ['className' => 'ObjectRelations']
             );
@@ -161,7 +161,7 @@ class RelationsBehavior extends Behavior
 
             $this->relatedTo($relation->inverse_alias, [
                 'className' => $className,
-                'through' => $through->getRegistryAlias(),
+                'through' => $through,
                 'foreignKey' => 'right_id',
                 'targetForeignKey' => 'left_id',
                 'conditions' => [

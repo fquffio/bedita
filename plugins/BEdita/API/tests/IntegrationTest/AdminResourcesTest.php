@@ -26,7 +26,7 @@ class AdminResourcesTest extends IntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.config'
+        'plugin.BEdita/Core.Config'
     ];
 
     /**
@@ -132,6 +132,6 @@ class AdminResourcesTest extends IntegrationTestCase
         $this->configRequestHeaders('DELETE', $authHeader);
         $this->delete("$endpoint/$resourceId");
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
+        $this->assertResponseEmpty();
     }
 }

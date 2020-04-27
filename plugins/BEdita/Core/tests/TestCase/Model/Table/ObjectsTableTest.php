@@ -7,7 +7,7 @@ use BEdita\Core\Utility\Database;
 use BEdita\Core\Utility\LoggedUser;
 use Cake\Core\Configure;
 use Cake\Datasource\Exception\RecordNotFoundException;
-use Cake\Network\Exception\BadRequestException;
+use Cake\Http\Exception\BadRequestException;
 use Cake\ORM\Exception\PersistenceFailedException;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
@@ -34,18 +34,20 @@ class ObjectsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.trees',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.date_ranges',
-        'plugin.BEdita/Core.translations',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Trees',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.DateRanges',
+        'plugin.BEdita/Core.Translations',
+        'plugin.BEdita/Core.Categories',
+        'plugin.BEdita/Core.ObjectCategories',
     ];
 
     /**
@@ -55,7 +57,7 @@ class ObjectsTableTest extends TestCase
     {
         parent::setUp();
 
-        $this->Objects = TableRegistry::get('Objects');
+        $this->Objects = TableRegistry::getTableLocator()->get('Objects');
         LoggedUser::setUser(['id' => 1]);
     }
 
@@ -624,5 +626,100 @@ class ObjectsTableTest extends TestCase
         static::assertNotEmpty($result);
         static::assertSame(1, count($result));
         static::assertSame(2, $result[0]['id']);
+    }
+
+    /**
+     * Data provider for `testFindAvailable`.
+     *
+     * @return array
+     */
+    public function findAvailableProvider()
+    {
+        return [
+            'no status' => [
+                12,
+                ['id > 0']
+            ],
+            'status on' => [
+                7,
+                ['id > 5'],
+                'on',
+            ],
+        ];
+    }
+
+    /**
+     * Test `findAvailable()`.
+     *
+     * @return void
+     *
+     * @dataProvider findAvailableProvider()
+     * @covers ::findAvailable()
+     */
+    public function testFindAvailable(int $expected, array $condition, string $statusLevel = null)
+    {
+        $result = $this->Objects->find('available')
+            ->where($condition)
+            ->toArray();
+        if (!empty($statusLevel)) {
+            Configure::write('Status.level', $statusLevel);
+        }
+        static::assertSame($expected, count($result));
+    }
+
+    /**
+     * Test `findCategories` method.
+     *
+     * @return void
+     *
+     * @covers ::findCategories()
+     * @covers ::categoriesQuery()
+     */
+    public function testFindCategories()
+    {
+        $result = TableRegistry::getTableLocator()
+            ->get('Documents')
+            ->find('categories', ['first-cat,second-cat'])
+            ->toArray();
+        static::assertSame(1, count($result));
+    }
+
+    /**
+     * Test `findTags` method.
+     *
+     * @return void
+     *
+     * @covers ::findTags()
+     * @covers ::categoriesQuery()
+     */
+    public function testFindTags()
+    {
+        $result = TableRegistry::getTableLocator()
+            ->get('Profiles')
+            ->find('tags', ['first-tag'])
+            ->toArray();
+        static::assertSame(1, count($result));
+    }
+
+    /**
+     * Test `findUnameId` method.
+     *
+     * @return void
+     *
+     * @covers ::findUnameId()
+     */
+    public function testFindUnameID()
+    {
+        $result = TableRegistry::getTableLocator()
+            ->get('Profiles')
+            ->find('unameId', ['gustavo-supporto'])
+            ->firstOrFail();
+        static::assertSame(4, $result->get('id'));
+
+        $result = TableRegistry::getTableLocator()
+            ->get('Profiles')
+            ->find('unameId', [4])
+            ->firstOrFail();
+        static::assertSame('gustavo-supporto', $result->get('uname'));
     }
 }

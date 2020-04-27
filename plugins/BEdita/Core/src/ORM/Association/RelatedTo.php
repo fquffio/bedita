@@ -23,6 +23,50 @@ use Cake\ORM\Table;
  */
 class RelatedTo extends BelongsToMany
 {
+    /**
+     * The name of the field that describe an inverse relation.
+     * This key is compared to `self::_foreignKey` to know the direction of the relation.
+     * Default is `right_id`.
+     *
+     * @var string|string[]
+     */
+    protected $inverseKey = 'right_id';
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function _options(array $options)
+    {
+        parent::_options($options);
+
+        if (!empty($options['inverseKey'])) {
+            $this->setInverseKey($options['inverseKey']);
+        }
+    }
+
+    /**
+     * Set the name of the field used to check if the association represents
+     * an inverse relation.
+     *
+     * @param string|string[] $key The key or keys used for inverse relation check.
+     * @return $this
+     */
+    public function setInverseKey($key): self
+    {
+        $this->inverseKey = $key;
+
+        return $this;
+    }
+
+    /**
+     * Return the inverse key.
+     *
+     * @return string|string[]
+     */
+    public function getInverseKey()
+    {
+        return $this->inverseKey;
+    }
 
     /**
      * Get sub-query for matching.
@@ -36,7 +80,7 @@ class RelatedTo extends BelongsToMany
             $options['conditions'] = [];
         }
         $junction = $this->junction();
-        $belongsTo = $junction->association($this->getSource()->getAlias());
+        $belongsTo = $junction->getAssociation($this->getSource()->getAlias());
         $condition = $belongsTo->_joinCondition(['foreignKey' => $belongsTo->getForeignKey()]);
 
         $subQuery = $this->find()
@@ -48,7 +92,7 @@ class RelatedTo extends BelongsToMany
             $subQuery = $options['queryBuilder']($subQuery);
         }
 
-        $assoc = $junction->association($this->getTarget()->getAlias());
+        $assoc = $junction->getAssociation($this->getTarget()->getAlias());
         $conditions = $assoc->_joinCondition([
             'foreignKey' => $this->getTargetForeignKey()
         ]);
@@ -90,5 +134,16 @@ class RelatedTo extends BelongsToMany
         }
 
         return $table->objectType()->is_abstract;
+    }
+
+    /**
+     * Say if the association describe an inverse relation.
+     * The association is inverse if foreign key and inverse key are the same.
+     *
+     * @return bool
+     */
+    public function isInverse(): bool
+    {
+        return $this->getForeignKey() === $this->getInverseKey();
     }
 }

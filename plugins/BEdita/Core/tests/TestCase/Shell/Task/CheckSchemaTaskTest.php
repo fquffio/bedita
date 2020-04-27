@@ -18,9 +18,11 @@ use Cake\Console\Shell;
 use Cake\Core\Plugin;
 use Cake\Database\Connection;
 use Cake\Database\Driver\Mysql;
-use Cake\Database\Schema\Table;
+use Cake\Database\Schema\TableSchema;
+use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\ConsoleIntegrationTestCase;
+use Cake\Utility\Hash;
 
 /**
  * @coversDefaultClass \BEdita\Core\Shell\Task\CheckSchemaTask
@@ -38,16 +40,6 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
         $this->fixtureManager->shutDown();
 
         $this->exec('db_admin init -fs');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function tearDown()
-    {
-        parent::tearDown();
-
-        Plugin::load('Migrations');
     }
 
     /**
@@ -77,6 +69,26 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
     }
 
     /**
+     * Check whether or not perform a check on a given $connection
+     *
+     * @param ConnectionInterface $connection
+     * @return bool
+     */
+    protected function checkAvailable($connection)
+    {
+        if (!($connection->getDriver() instanceof Mysql)) {
+            return false;
+        }
+        // Real vendor must not be defined, otherwise we are dealing
+        // with MariaDB, Aurora or other MySQL compatible DB where some checks
+        // involving `Migrations.MigrationDiff` are failing. Same thing happens
+        // with MySQL 8 (but not always reproducible), deepening is needed...
+        $realVendor = Hash::get((array)$connection->config(), 'realVendor');
+
+        return empty($realVendor);
+    }
+
+    /**
      * Test controlled failure on missing "Migrations" plugin.
      *
      * @return void
@@ -84,12 +96,16 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
      */
     public function testMissingMigrationsPlugin()
     {
-        Plugin::unload('Migrations');
+        $pluginCollection = Plugin::getCollection();
+        $migrationPlugin = $pluginCollection->get('Migrations');
+        $pluginCollection->remove('Migrations');
 
         $this->exec(CheckSchemaTask::class);
 
         $this->assertExitCode(Shell::CODE_ERROR);
         $this->assertErrorContains('Plugin "Migrations" must be loaded');
+        // restore plugin
+        $pluginCollection->add($migrationPlugin);
     }
 
     /**
@@ -105,7 +121,7 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
         /* @var \Cake\Database\Connection $connection */
         $connection = ConnectionManager::get('default');
 
-        $table = new Table('foo_bar');
+        $table = new TableSchema('foo_bar');
         $table
             ->addColumn('foo_bar', [
                 'type' => 'string',
@@ -126,11 +142,11 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
                 'default' => null,
             ])
             ->addIndex('mytestindex', [
-                'type' => Table::INDEX_INDEX,
+                'type' => TableSchema::INDEX_INDEX,
                 'columns' => ['foo_bar'],
             ])
             ->addConstraint('foobar_uq', [
-                'type' => Table::CONSTRAINT_UNIQUE,
+                'type' => TableSchema::CONSTRAINT_UNIQUE,
                 'columns' => ['foo_bar'],
             ]);
         foreach ($table->createSql($connection) as $statement) {
@@ -139,7 +155,7 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
 
         $this->exec(CheckSchemaTask::class);
 
-        if ($connection->getDriver() instanceof Mysql) {
+        if ($this->checkAvailable($connection)) {
             static::assertExitCode(Shell::CODE_ERROR);
             $this->assertOutputContains('Column name "foo_bar" is not valid (same name as table)');
             $this->assertOutputContains('Column name "password" is not valid (reserved word)');
@@ -167,7 +183,7 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
         $this->exec(CheckSchemaTask::class);
 
         $this->assertExitCode(Shell::CODE_SUCCESS);
-        if (!($connection->getDriver() instanceof Mysql)) {
+        if (!$this->checkAvailable($connection)) {
             $this->assertOutputContains('SQL conventions and schema differences can only be checked on MySQL');
         }
         $this->assertErrorEmpty();
@@ -185,14 +201,14 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
         /* @var \Cake\Database\Connection $connection */
         $connection = ConnectionManager::get('default');
 
-        $table = new Table('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
+        $table = new TableSchema('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
         foreach ($table->createSql($connection) as $statement) {
             $connection->query($statement);
         }
 
         $this->exec(CheckSchemaTask::class);
 
-        if ($connection->getDriver() instanceof Mysql) {
+        if ($this->checkAvailable($connection)) {
             $this->assertExitCode(Shell::CODE_ERROR);
             $this->assertOutputContains('Table "foo_bar" has been added');
         } else {
@@ -221,7 +237,7 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
 
         $this->exec(CheckSchemaTask::class);
 
-        if ($connection->getDriver() instanceof Mysql) {
+        if ($this->checkAvailable($connection)) {
             $this->assertExitCode(Shell::CODE_ERROR);
             $this->assertOutputContains('Table "config" has been removed');
         } else {
@@ -251,11 +267,11 @@ class CheckSchemaTaskTest extends ConsoleIntegrationTestCase
 
         $this->exec(CheckSchemaTask::class);
 
-        if ($connection->getDriver() instanceof Mysql) {
+        if ($this->checkAvailable($connection)) {
             $this->assertExitCode(Shell::CODE_ERROR);
             foreach ($constraints as $constraint) {
                 $info = $table->getConstraint($constraint);
-                if ($info && isset($info['type']) && $info['type'] !== Table::CONSTRAINT_FOREIGN) {
+                if ($info && isset($info['type']) && $info['type'] !== TableSchema::CONSTRAINT_FOREIGN) {
                     continue;
                 }
 

@@ -41,18 +41,18 @@ class PropertyTypesTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.async_jobs',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.streams',
+        'plugin.BEdita/Core.AsyncJobs',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Streams',
     ];
 
     /**
@@ -65,7 +65,7 @@ class PropertyTypesTableTest extends TestCase
         Cache::drop('_bedita_object_types_');
         Cache::setConfig('_bedita_object_types_', ['className' => 'File']);
 
-        $this->PropertyTypes = TableRegistry::get('PropertyTypes');
+        $this->PropertyTypes = TableRegistry::getTableLocator()->get('PropertyTypes');
     }
 
     /**
@@ -161,7 +161,7 @@ class PropertyTypesTableTest extends TestCase
 
         static::assertNotFalse(Cache::read('property_types', ObjectTypesTable::CACHE_CONFIG));
 
-        $propertyType = $this->PropertyTypes->get(9);
+        $propertyType = $this->PropertyTypes->get(12);
         $propertyType->name = 'gustavo';
         $this->PropertyTypes->save($propertyType);
 
@@ -193,7 +193,7 @@ class PropertyTypesTableTest extends TestCase
      * @return void
      *
      * @covers ::beforeDelete()
-     * @expectedException \Cake\Network\Exception\ForbiddenException
+     * @expectedException \Cake\Http\Exception\ForbiddenException
      * @expectedExceptionCode 403
      * @expectedExceptionMessage Property type with existing properties
      */
@@ -293,7 +293,7 @@ class PropertyTypesTableTest extends TestCase
      */
     public function testDetect($expected, $name, $table, $overrideType = null)
     {
-        $table = TableRegistry::get($table);
+        $table = TableRegistry::getTableLocator()->get($table);
         if ($overrideType !== null) {
             $table
                 ->setValidator('default', new Validator())
@@ -304,5 +304,37 @@ class PropertyTypesTableTest extends TestCase
         $result = $this->PropertyTypes->detect($name, $table)->name;
 
         static::assertSame($expected, $result);
+    }
+
+    /**
+     * Test that an exception is raised when attempting to change a core property type.
+     *
+     * @return void
+     *
+     * @covers ::beforeSave()
+     * @expectedException \BEdita\Core\Exception\ImmutableResourceException
+     * @expectedExceptionCode 403
+     * @expectedExceptionMessage Could not modify core property
+     */
+    public function testBeforeSaveForbidden()
+    {
+        $propertyType = $this->PropertyTypes->get(1);
+        $propertyType->set('name', 'gustavo');
+        $this->PropertyTypes->save($propertyType);
+    }
+
+    /**
+     * Test that no exception is raised when attempting to change a non core property type.
+     *
+     * @return void
+     *
+     * @covers ::beforeSave()
+     */
+    public function testBeforeSaveOk()
+    {
+        $propertyType = $this->PropertyTypes->get(12);
+        $propertyType->set('name', 'gustavo');
+        $success = $this->PropertyTypes->save($propertyType);
+        static::assertNotFalse($success);
     }
 }

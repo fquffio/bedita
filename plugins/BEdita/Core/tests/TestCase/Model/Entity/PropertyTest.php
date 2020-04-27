@@ -39,16 +39,16 @@ class PropertyTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
     ];
 
     /**
@@ -58,7 +58,7 @@ class PropertyTest extends TestCase
     {
         parent::setUp();
 
-        $this->Properties = TableRegistry::get('Properties');
+        $this->Properties = TableRegistry::getTableLocator()->get('Properties');
     }
 
     /**
@@ -102,88 +102,6 @@ class PropertyTest extends TestCase
         static::assertEquals($created, $property->created);
         static::assertEquals($modified, $property->modified);
         static::assertEquals($data['description'], $property->description);
-    }
-
-    /**
-     * Data provider for `testGetObjectTypeName` test case.
-     *
-     * @return array
-     */
-    public function getObjectTypeNameProvider()
-    {
-        return [
-            'document' => [
-                'documents',
-                2,
-            ],
-            'non existent' => [
-                null,
-                -1,
-            ],
-            'invalid' => [
-                null,
-                null,
-            ],
-        ];
-    }
-
-    /**
-     * Test magic getter for object type name property.
-     *
-     * @param string|null $expected Expected object type name.
-     * @param mixed $objectTypeId Object type ID.
-     * @return void
-     *
-     * @covers ::_getObjectTypeName()
-     * @dataProvider getObjectTypeNameProvider()
-     */
-    public function testGetObjectTypeName($expected, $objectTypeId)
-    {
-        $entity = new Property();
-        $entity->object_type_id = $objectTypeId;
-
-        $objectTypeName = $entity->object_type_name;
-
-        static::assertSame($expected, $objectTypeName);
-    }
-
-    /**
-     * Data provider for `testSetObjectTypeName` test case.
-     *
-     * @return array
-     */
-    public function setObjectTypeNameProvider()
-    {
-        return [
-            'document' => [
-                2,
-                'documents',
-            ],
-            'non existent' => [
-                null,
-                'this type does not exist',
-            ],
-        ];
-    }
-
-    /**
-     * Test magic setter for object type name property.
-     *
-     * @param string|null $expected Expected object type ID.
-     * @param mixed $objectTypeName Object type name.
-     * @return void
-     *
-     * @covers ::_setObjectTypeName()
-     * @dataProvider setObjectTypeNameProvider()
-     */
-    public function testSetObjectTypeName($expected, $objectTypeName)
-    {
-        $entity = new Property();
-        $entity->object_type_name = $objectTypeName;
-
-        $objectTypeId = $entity->object_type_id;
-
-        static::assertSame($expected, $objectTypeId);
     }
 
     /**

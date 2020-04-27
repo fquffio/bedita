@@ -255,8 +255,8 @@ class TranslationsControllerTest extends IntegrationTestCase
         $this->configRequestHeaders('DELETE', $this->getUserAuthHeader());
         $this->delete('/translations/2');
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
-        $this->assertFalse(TableRegistry::get('Translations')->exists(['id' => 2]));
+        $this->assertResponseEmpty();
+        $this->assertFalse(TableRegistry::getTableLocator()->get('Translations')->exists(['id' => 2]));
     }
 
     /**

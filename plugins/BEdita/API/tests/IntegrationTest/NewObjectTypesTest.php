@@ -24,8 +24,8 @@ class NewObjectTypesTest extends IntegrationTestCase
      * {@inheritDoc}
      */
     public $fixtures = [
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.streams',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Streams',
     ];
 
     /**
@@ -80,7 +80,7 @@ class NewObjectTypesTest extends IntegrationTestCase
         $this->post('/model/object_types', json_encode(compact('data')));
         $this->assertResponseCode(201);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertTrue(TableRegistry::get('ObjectTypes')->exists(['name' => $type]));
+        $this->assertTrue(TableRegistry::getTableLocator()->get('ObjectTypes')->exists(['name' => $type]));
 
         // ADD OBJECT
         $data = [
@@ -126,21 +126,20 @@ class NewObjectTypesTest extends IntegrationTestCase
         $this->configRequestHeaders('DELETE', $this->getUserAuthHeader());
         $this->delete("/$type/$lastId");
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
+        $this->assertResponseEmpty();
 
         // EMPTY TRASH
         TableRegistry::clear();
         $this->configRequestHeaders('DELETE', $this->getUserAuthHeader());
         $this->delete("/trash/$lastId");
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
-        $result = json_decode((string)$this->_response->getBody(), true);
+        $this->assertResponseEmpty();
 
         // REMOVE TYPE
         TableRegistry::clear();
         $this->configRequestHeaders('DELETE', $this->getUserAuthHeader());
         $this->delete("/model/object_types/$type");
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
+        $this->assertResponseEmpty();
     }
 }

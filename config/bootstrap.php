@@ -29,18 +29,18 @@ require __DIR__ . '/paths.php';
  */
 require CORE_PATH . 'config' . DS . 'bootstrap.php';
 
+use BEdita\API\Error\ErrorHandler;
 use BEdita\Core\Filesystem\FilesystemRegistry;
-use BEdita\Core\Plugin;
 use Cake\Cache\Cache;
 use Cake\Console\ConsoleErrorHandler;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\JsonConfig;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Datasource\ConnectionManager;
-use Cake\Error\ErrorHandler;
 use Cake\Http\ServerRequest;
 use Cake\Log\Log;
 use Cake\Mailer\Email;
+use Cake\Mailer\TransportFactory;
 use Cake\Utility\Security;
 
 /**
@@ -115,11 +115,11 @@ if (Configure::read('debug')) {
 }
 
 /*
- * Set server timezone to UTC. You can change it to another timezone of your
- * choice but using UTC makes time calculations / conversions easier.
+ * Set server timezone using 'BEDITA_DEFAULT_TIMEZONE' with 'UTC' as default.
+ * 'UTC' makes time calculations / conversions easier, it is the recommended choice.
  * Check http://php.net/manual/en/timezones.php for list of valid timezone strings.
  */
-date_default_timezone_set('UTC');
+date_default_timezone_set(env('BEDITA_DEFAULT_TIMEZONE', 'UTC'));
 
 /*
  * Configure the mbstring extension to use the correct encoding.
@@ -170,7 +170,7 @@ if (!Configure::read('App.fullBaseUrl')) {
 
 Cache::setConfig(Configure::consume('Cache') ?: []);
 ConnectionManager::setConfig(Configure::consume('Datasources') ?: []);
-Email::setConfigTransport(Configure::consume('EmailTransport') ?: []);
+TransportFactory::setConfig(Configure::consume('EmailTransport') ?: []);
 Email::setConfig(Configure::consume('Email') ?: []);
 Log::setConfig(Configure::consume('Log') ?: []);
 Security::setSalt((string)Configure::consume('Security.salt'));
@@ -199,22 +199,3 @@ ServerRequest::addDetector('tablet', function ($request) {
 //Inflector::rules('irregular', ['red' => 'redlings']);
 //Inflector::rules('uninflected', ['dontinflectme']);
 //Inflector::rules('transliteration', ['/å/' => 'aa']);
-
-/*
- * Plugins need to be loaded manually, you can either load them one by one or all of them in a single call
- * Uncomment one of the lines below, as you need. make sure you read the documentation on Plugin to use more
- * advanced ways of loading plugins
- *
- * Plugin::loadAll(); // Loads all plugins at once
- * Plugin::load('Migrations'); //Loads a single plugin named Migrations
- *
- */
-Plugin::load(
-    ['BEdita/Core', 'BEdita/API'],
-    ['bootstrap' => true, 'routes' => true, 'ignoreMissing' => true]
-);
-
-/*
- * Load other custom / 3rd party plugins via configuration key 'Plugins'.
- */
-Plugin::loadFromConfig();

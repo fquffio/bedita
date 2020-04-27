@@ -40,8 +40,8 @@ class AuthProviderTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.auth_providers',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.AuthProviders',
     ];
 
     /**
@@ -51,7 +51,7 @@ class AuthProviderTest extends TestCase
     {
         parent::setUp();
 
-        $this->AuthProviders = TableRegistry::get('AuthProviders');
+        $this->AuthProviders = TableRegistry::getTableLocator()->get('AuthProviders');
     }
 
     /**

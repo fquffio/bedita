@@ -20,9 +20,9 @@ use Cake\Database\Expression\QueryExpression;
 use Cake\Event\Event;
 use Cake\Event\EventDispatcherTrait;
 use Cake\Event\EventListenerInterface;
+use Cake\Http\Exception\BadRequestException;
 use Cake\I18n\Time;
 use Cake\Mailer\MailerAwareTrait;
-use Cake\Network\Exception\BadRequestException;
 use Cake\ORM\TableRegistry;
 use Cake\Validation\Validator;
 
@@ -39,7 +39,6 @@ use Cake\Validation\Validator;
  */
 class ChangeCredentialsRequestAction extends BaseAction implements EventListenerInterface
 {
-
     use EventDispatcherTrait;
     use MailerAwareTrait;
 
@@ -62,8 +61,8 @@ class ChangeCredentialsRequestAction extends BaseAction implements EventListener
      */
     protected function initialize(array $config)
     {
-        $this->Users = TableRegistry::get('Users');
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
+        $this->Users = TableRegistry::getTableLocator()->get('Users');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
 
         $this->getEventManager()->on($this);
     }
@@ -147,7 +146,7 @@ class ChangeCredentialsRequestAction extends BaseAction implements EventListener
      */
     protected function createJob(User $user)
     {
-        $asyncJobsTable = TableRegistry::get('AsyncJobs');
+        $asyncJobsTable = TableRegistry::getTableLocator()->get('AsyncJobs');
         $action = new SaveEntityAction(['table' => $asyncJobsTable]);
 
         return $action([

@@ -41,16 +41,16 @@ class StaticPropertiesTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.media',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Media',
     ];
 
     /**
@@ -82,12 +82,12 @@ class StaticPropertiesTableTest extends TestCase
      */
     public function testInitialize()
     {
-        $this->StaticProperties = TableRegistry::get('StaticProperties');
+        $this->StaticProperties = TableRegistry::getTableLocator()->get('StaticProperties');
 
         static::assertSame(StaticProperty::class, $this->StaticProperties->getEntityClass());
         static::assertRegExp('/^(?:[\w_]+\.)?static_properties_[a-f0-9]{16}$/', $this->StaticProperties->getTable());
 
-        $otherInstance = TableRegistry::get('BEdita/Core.StaticProperties');
+        $otherInstance = TableRegistry::getTableLocator()->get('BEdita/Core.StaticProperties');
 
         static::assertNotSame($otherInstance->getTable(), $this->StaticProperties->getTable());
     }
@@ -101,9 +101,9 @@ class StaticPropertiesTableTest extends TestCase
      */
     public function testCreateTable()
     {
-        $this->StaticProperties = TableRegistry::get('StaticProperties');
+        $this->StaticProperties = TableRegistry::getTableLocator()->get('StaticProperties');
 
-        $Properties = TableRegistry::get('Properties');
+        $Properties = TableRegistry::getTableLocator()->get('Properties');
 
         $staticPropSchema = $this->StaticProperties->getSchema();
         $propSchema = $Properties->getSchema();
@@ -259,7 +259,7 @@ class StaticPropertiesTableTest extends TestCase
      */
     public function testAddSchemaDetails(array $expected = null, array $conditions)
     {
-        $result = TableRegistry::get('StaticProperties')->find()
+        $result = TableRegistry::getTableLocator()->get('StaticProperties')->find()
             ->where($conditions)
             ->enableHydration(false)
             ->first();
@@ -273,7 +273,7 @@ class StaticPropertiesTableTest extends TestCase
         static::assertNotNull($result);
         static::assertArraySubset($expected, $result);
 
-        $secondResult = TableRegistry::get('BEdita/Core.StaticProperties')->find()
+        $secondResult = TableRegistry::getTableLocator()->get('BEdita/Core.StaticProperties')->find()
             ->where($conditions)
             ->enableHydration(false)
             ->first();

@@ -27,12 +27,12 @@ class FilterQueryStringTest extends IntegrationTestCase
      * {@inheritDoc}
      */
     public $fixtures = [
-        'plugin.BEdita/Core.date_ranges',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
+        'plugin.BEdita/Core.DateRanges',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
     ];
 
     /**
@@ -250,17 +250,30 @@ class FilterQueryStringTest extends IntegrationTestCase
                     '5',
                 ],
             ],
-            'usersFilterRole' => [
+            'filter role id' => [
                 '/users?filter[roles]=1',
                 [
                     '1',
                 ],
             ],
-            'usersFilterRoles' => [
+            'filter roles ids' => [
                 '/users?filter[roles][]=1&filter[roles][]=2',
                 [
                     '1',
                     '5',
+                ],
+            ],
+            'role name' => [
+                '/users?filter[roles]=first role',
+                [
+                   '1',
+                ],
+            ],
+            'role name' => [
+                '/users?filter[roles]=first role,second role',
+                [
+                   '1',
+                   '5',
                 ],
             ],
             'here2' => [
@@ -644,5 +657,67 @@ class FilterQueryStringTest extends IntegrationTestCase
 
         static::assertArrayHasKey('data', $result);
         static::assertEquals([11, 13], Hash::extract($result['data'], '{n}.id'));
+    }
+
+    /**
+     * Data provider for `testCategoriesTags`.
+     *
+     * @return array
+     */
+    public function categoriesTagsProvider()
+    {
+        return [
+            'categories' => [
+                '/documents',
+                'filter[categories]=first-cat',
+                [
+                    '2',
+                ],
+            ],
+            'two cats' => [
+                '/documents',
+                'filter[categories]=first-cat,second-cat',
+                [
+                    '2',
+                ],
+            ],
+            'disabled' => [
+                '/documents',
+                'filter[categories]=disabled-cat',
+                [
+                ],
+            ],
+            'tags' => [
+                '/profiles',
+                'filter[tags]=first-tag',
+                [
+                    '4',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test filters on categories and tags.
+     *
+     * @param string $endpoint Endpoint.
+     * @param string $query Query string.
+     * @param array $expected Expected result.
+     * @return void
+     *
+     * @dataProvider categoriesTagsProvider
+     * @coversNothing
+     */
+    public function testCategoriesTags($endpoint, $query, $expected)
+    {
+        $this->configRequestHeaders();
+        $this->get("$endpoint?$query");
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertResponseCode(200);
+        $this->assertContentType('application/vnd.api+json');
+
+        static::assertArrayHasKey('data', $result);
+        static::assertEquals($expected, Hash::extract($result['data'], '{n}.id'));
     }
 }

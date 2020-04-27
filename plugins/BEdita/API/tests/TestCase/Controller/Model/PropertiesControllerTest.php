@@ -27,10 +27,10 @@ class PropertiesControllerTest extends IntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.media',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Media',
     ];
 
     /**
@@ -276,7 +276,7 @@ class PropertiesControllerTest extends IntegrationTestCase
             'data' => [],
         ];
 
-        TableRegistry::get('Properties')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Properties')->deleteAll([]);
 
         $this->configRequestHeaders();
         $this->get('/model/properties?filter[type]=dynamic');
@@ -391,7 +391,7 @@ class PropertiesControllerTest extends IntegrationTestCase
         $this->assertResponseCode(201);
         $this->assertContentType('application/vnd.api+json');
         $this->assertHeader('Location', 'http://api.example.com/model/properties/10');
-        static::assertTrue(TableRegistry::get('Properties')->exists(['name' => 'yet_another_body']));
+        static::assertTrue(TableRegistry::getTableLocator()->get('Properties')->exists(['name' => 'yet_another_body']));
     }
 
     /**
@@ -411,14 +411,14 @@ class PropertiesControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $count = TableRegistry::get('Properties')->find()->count();
+        $count = TableRegistry::getTableLocator()->get('Properties')->find()->count();
 
         $this->configRequestHeaders('POST', $this->getUserAuthHeader());
         $this->post('/model/properties', json_encode(compact('data')));
 
         $this->assertResponseCode(400);
         $this->assertContentType('application/vnd.api+json');
-        static::assertEquals($count, TableRegistry::get('Properties')->find()->count());
+        static::assertEquals($count, TableRegistry::getTableLocator()->get('Properties')->find()->count());
     }
 
     /**
@@ -456,7 +456,7 @@ class PropertiesControllerTest extends IntegrationTestCase
         ];
         static::assertEquals($data, $result['data']);
 
-        static::assertEquals('nice description', TableRegistry::get('Properties')->get(1)->get('description'));
+        static::assertEquals('nice description', TableRegistry::getTableLocator()->get('Properties')->get(1)->get('description'));
     }
 
     /**
@@ -482,8 +482,8 @@ class PropertiesControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(409);
         $this->assertContentType('application/vnd.api+json');
-        static::assertEquals('another_title', TableRegistry::get('Properties')->get(1)->get('name'));
-        static::assertEquals('another_description', TableRegistry::get('Properties')->get(2)->get('name'));
+        static::assertEquals('another_title', TableRegistry::getTableLocator()->get('Properties')->get(1)->get('name'));
+        static::assertEquals('another_description', TableRegistry::getTableLocator()->get('Properties')->get(2)->get('name'));
     }
 
     /**
@@ -500,7 +500,7 @@ class PropertiesControllerTest extends IntegrationTestCase
         $this->delete('/model/properties/1');
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
-        static::assertFalse(TableRegistry::get('Properties')->exists(['id' => 1]));
+        $this->assertResponseEmpty();
+        static::assertFalse(TableRegistry::getTableLocator()->get('Properties')->exists(['id' => 1]));
     }
 }

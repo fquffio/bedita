@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2017 ChannelWeb Srl, Chialab Srl
+ * Copyright 2020 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -14,7 +14,6 @@ namespace BEdita\Core\Test\TestCase\Utility;
 
 use BEdita\Core\Utility\LoggedUser;
 use BEdita\Core\Utility\ObjectsHandler;
-use Cake\Core\Configure;
 use Cake\TestSuite\TestCase;
 
 /**
@@ -31,15 +30,18 @@ class ObjectsHandlerTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.trees',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Trees',
+        'plugin.BEdita/Core.Categories',
+        'plugin.BEdita/Core.ObjectCategories',
+        'plugin.BEdita/Core.History',
     ];
 
     /**
@@ -79,13 +81,17 @@ class ObjectsHandlerTest extends TestCase
         $userId = $entity->id;
         $this->assertInternalType('integer', $userId);
 
-        $data = ['title' => 'a pragmatic title', 'description' => 'an agile descriptio'];
+        $data = [
+            'title' => 'a pragmatic title',
+            'description' => 'an agile description',
+            'uname' => 'agile-uname',
+        ];
         $entity = ObjectsHandler::save('documents', $data, ['id' => $userId]);
         $this->assertNotEmpty($entity);
         $docId = $entity->id;
         $this->assertInternalType('integer', $docId);
 
-        $result = ObjectsHandler::remove($docId);
+        $result = ObjectsHandler::remove('agile-uname');
         $this->assertTrue($result);
 
         $result = ObjectsHandler::remove($userId);
@@ -97,7 +103,7 @@ class ObjectsHandlerTest extends TestCase
      *
      * @return void
      * @covers ::save()
-     * @expectedException \Cake\Console\Exception\StopException
+     * @expectedException \Cake\ORM\Exception\PersistenceFailedException
      */
     public function testSaveException()
     {
@@ -110,6 +116,7 @@ class ObjectsHandlerTest extends TestCase
      *
      * @return void
      * @covers ::save()
+     * @covers ::isCli()
      */
     public function testSaveExisting()
     {
@@ -137,11 +144,16 @@ class ObjectsHandlerTest extends TestCase
      * @return void
      * @covers ::checkEnvironment()
      * @expectedException \Cake\Console\Exception\StopException
+     * @expectedExceptionMessage Operation avilable only in CLI environment
      */
     public function testEnvironment()
     {
-        Configure::write('debug', false);
-        ObjectsHandler::save('documents', []);
-        Configure::write('debug', true);
+        $testClass = new class extends ObjectsHandler {
+            protected static function isCli(): bool
+            {
+                return false;
+            }
+        };
+        $testClass::save('documents', []);
     }
 }

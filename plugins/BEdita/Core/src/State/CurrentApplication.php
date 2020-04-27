@@ -26,7 +26,6 @@ use Cake\ORM\TableRegistry;
  */
 class CurrentApplication
 {
-
     use SingletonTrait;
 
     /**
@@ -60,7 +59,7 @@ class CurrentApplication
     /**
      * Static wrapper around {@see self::id()}.
      *
-     * @return \BEdita\Core\Model\Entity\Application|null
+     * @return int|null
      */
     public static function getApplicationId()
     {
@@ -126,7 +125,7 @@ class CurrentApplication
     public static function setFromApiKey($apiKey)
     {
         static::getInstance()->set(
-            TableRegistry::get('Applications')->find('apiKey', compact('apiKey'))->firstOrFail()
+            TableRegistry::getTableLocator()->get('Applications')->find('apiKey', compact('apiKey'))->firstOrFail()
         );
     }
 

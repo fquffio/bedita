@@ -38,13 +38,13 @@ class CheckTreeTaskTest extends ConsoleIntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.trees',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Trees',
     ];
 
     /**
@@ -56,7 +56,7 @@ class CheckTreeTaskTest extends ConsoleIntegrationTestCase
     {
         parent::setUp();
 
-        $this->Trees = TableRegistry::get('Trees');
+        $this->Trees = TableRegistry::getTableLocator()->get('Trees');
     }
 
     /**

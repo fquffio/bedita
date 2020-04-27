@@ -42,13 +42,14 @@ Router::plugin(
             'properties',
             'property_types',
             'relations',
+            'categories',
         ];
         $routes->setRouteClass(InflectedRoute::class);
 
         // Home.
         $routes->redirect(
             '/',
-            ['_name' => 'api:home'],
+            '/home',
             ['persist' => true]
         );
         $routes->connect(
@@ -69,6 +70,11 @@ Router::plugin(
             '/auth',
             ['controller' => 'Login', 'action' => 'login', '_method' => 'POST'],
             ['_name' => 'login']
+        );
+        $routes->connect(
+            '/auth/optout',
+            ['controller' => 'Login', 'action' => 'optout', '_method' => 'POST'],
+            ['_name' => 'login:optout']
         );
         $routes->connect(
             '/auth/change',
@@ -204,6 +210,20 @@ Router::plugin(
             '/config',
             ['controller' => 'Config', 'action' => 'index', '_method' => 'GET'],
             ['_name' => 'config:index']
+        );
+
+        // History.
+        $routes->connect(
+            '/history',
+            ['controller' => 'History', 'action' => 'index', '_method' => 'GET'],
+            ['_name' => 'history:index']
+        );
+
+        // Upload file and create object.
+        $routes->connect(
+            '/:object_type/upload/:fileName',
+            ['controller' => 'Upload', 'action' => 'upload'],
+            ['_name' => 'objects:upload', 'pass' => ['fileName']]
         );
 
         // Objects.

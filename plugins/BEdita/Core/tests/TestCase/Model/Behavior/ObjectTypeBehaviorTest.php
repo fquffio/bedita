@@ -29,10 +29,10 @@ class ObjectTypeBehaviorTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
     ];
 
     /**
@@ -73,7 +73,7 @@ class ObjectTypeBehaviorTest extends TestCase
      */
     public function testObjectType($expected, $table, $objectType = null)
     {
-        $table = TableRegistry::get($table);
+        $table = TableRegistry::getTableLocator()->get($table);
         if (!$table->hasBehavior('ObjectType')) {
             $table->addBehavior('BEdita/Core.ObjectType');
         }

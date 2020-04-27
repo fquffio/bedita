@@ -31,16 +31,18 @@ class ListObjectsActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.date_ranges',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.translations',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.DateRanges',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Translations',
+        'plugin.BEdita/Core.Categories',
+        'plugin.BEdita/Core.ObjectCategories',
     ];
 
     /**
@@ -50,7 +52,7 @@ class ListObjectsActionTest extends TestCase
      */
     public function testExecute()
     {
-        $table = TableRegistry::get('Objects');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table'));
 
         $result = $action();
@@ -66,8 +68,8 @@ class ListObjectsActionTest extends TestCase
      */
     public function testExecuteObjectTypeFilter()
     {
-        $objectType = TableRegistry::get('ObjectTypes')->get('Events');
-        $table = TableRegistry::get('Objects');
+        $objectType = TableRegistry::getTableLocator()->get('ObjectTypes')->get('Events');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table', 'objectType'));
 
         $result = $action();
@@ -83,7 +85,7 @@ class ListObjectsActionTest extends TestCase
      */
     public function testExecuteDeleted()
     {
-        $table = TableRegistry::get('Objects');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table'));
 
         $result = $action(['deleted' => true]);
@@ -99,7 +101,7 @@ class ListObjectsActionTest extends TestCase
      */
     public function testExecuteCustomFilter()
     {
-        $table = TableRegistry::get('Objects');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table'));
 
         $result = $action([
@@ -119,7 +121,7 @@ class ListObjectsActionTest extends TestCase
     {
         Configure::write('Status.level', 'on');
 
-        $table = TableRegistry::get('Objects');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table'));
 
         $result = $action();
@@ -135,8 +137,8 @@ class ListObjectsActionTest extends TestCase
      */
     public function testLang()
     {
-        $objectType = TableRegistry::get('ObjectTypes')->get('Documents');
-        $table = TableRegistry::get('Objects');
+        $objectType = TableRegistry::getTableLocator()->get('ObjectTypes')->get('Documents');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $action = new ListObjectsAction(compact('table', 'objectType'));
 
         $result = $action([

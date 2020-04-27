@@ -30,8 +30,8 @@ class GetEntityActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
-        'plugin.BEdita/Core.fake_articles',
+        'plugin.BEdita/Core.FakeAnimals',
+        'plugin.BEdita/Core.FakeArticles',
     ];
 
     /**
@@ -41,7 +41,7 @@ class GetEntityActionTest extends TestCase
     {
         parent::setUp();
 
-        TableRegistry::get('FakeAnimals', ['className' => Table::class])
+        TableRegistry::getTableLocator()->get('FakeAnimals', ['className' => Table::class])
             ->hasMany('FakeArticles');
     }
 
@@ -52,7 +52,7 @@ class GetEntityActionTest extends TestCase
      */
     public function testExecute()
     {
-        $table = TableRegistry::get('FakeAnimals');
+        $table = TableRegistry::getTableLocator()->get('FakeAnimals');
         $action = new GetEntityAction(compact('table'));
 
         $result = $action(['primaryKey' => 1]);
@@ -67,7 +67,7 @@ class GetEntityActionTest extends TestCase
      */
     public function testExecuteContain()
     {
-        $table = TableRegistry::get('FakeAnimals');
+        $table = TableRegistry::getTableLocator()->get('FakeAnimals');
         $action = new GetEntityAction(compact('table'));
 
         $result = $action(['primaryKey' => 1, 'contain' => ['FakeArticles']]);

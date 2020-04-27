@@ -14,8 +14,8 @@
 namespace BEdita\Core\Model\Action;
 
 use Cake\Event\EventDispatcherTrait;
+use Cake\Http\Exception\BadRequestException;
 use Cake\I18n\Time;
-use Cake\Network\Exception\BadRequestException;
 use Cake\ORM\TableRegistry;
 use Cake\Validation\Validator;
 
@@ -26,7 +26,6 @@ use Cake\Validation\Validator;
  */
 class ChangeCredentialsAction extends BaseAction
 {
-
     use EventDispatcherTrait;
 
     /**
@@ -49,8 +48,8 @@ class ChangeCredentialsAction extends BaseAction
      */
     protected function initialize(array $config)
     {
-        $this->Users = TableRegistry::get('Users');
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
+        $this->Users = TableRegistry::getTableLocator()->get('Users');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
     }
 
     /**

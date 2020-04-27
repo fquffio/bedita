@@ -36,10 +36,10 @@ class EndpointsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.endpoints',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Endpoints',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
     ];
 
     /**
@@ -50,7 +50,7 @@ class EndpointsTableTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->Endpoints = TableRegistry::get('Endpoints');
+        $this->Endpoints = TableRegistry::getTableLocator()->get('Endpoints');
     }
 
     /**

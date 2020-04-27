@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2018 ChannelWeb Srl, Chialab Srl
+ * Copyright 2019 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -30,10 +30,10 @@ class ObjectsControllerTest extends IntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.streams',
-        'plugin.BEdita/Core.media',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Streams',
+        'plugin.BEdita/Core.Media',
     ];
 
     /**
@@ -426,6 +426,12 @@ class ObjectsControllerTest extends IntegrationTestCase
                         'self' => 'http://api.example.com/events/9',
                     ],
                     'relationships' => [
+                        'test_abstract' => [
+                            'links' => [
+                                'related' => 'http://api.example.com/events/9/test_abstract',
+                                'self' => 'http://api.example.com/events/9/relationships/test_abstract',
+                            ],
+                        ],
                         'parents' => [
                             'links' => [
                                 'related' => 'http://api.example.com/events/9/parents',
@@ -483,12 +489,6 @@ class ObjectsControllerTest extends IntegrationTestCase
                             'links' => [
                                 'related' => 'http://api.example.com/files/10/translations',
                                 'self' => 'http://api.example.com/files/10/relationships/translations',
-                            ],
-                        ],
-                        'test_abstract' => [
-                            'links' => [
-                                'related' => 'http://api.example.com/files/10/test_abstract',
-                                'self' => 'http://api.example.com/files/10/relationships/test_abstract',
                             ],
                         ],
                         'inverse_test_abstract' => [
@@ -681,12 +681,6 @@ class ObjectsControllerTest extends IntegrationTestCase
                                 'self' => 'http://api.example.com/files/14/relationships/translations',
                             ],
                         ],
-                        'test_abstract' => [
-                            'links' => [
-                                'related' => 'http://api.example.com/files/14/test_abstract',
-                                'self' => 'http://api.example.com/files/14/relationships/test_abstract',
-                            ],
-                        ],
                         'inverse_test_abstract' => [
                             'links' => [
                                 'related' => 'http://api.example.com/files/14/inverse_test_abstract',
@@ -738,8 +732,8 @@ class ObjectsControllerTest extends IntegrationTestCase
             'data' => [],
         ];
 
-        TableRegistry::get('Translations')->deleteAll([]);
-        TableRegistry::get('Objects')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Translations')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Objects')->deleteAll([]);
 
         $this->configRequestHeaders();
         $this->get('/objects');
@@ -762,7 +756,7 @@ class ObjectsControllerTest extends IntegrationTestCase
     {
         $expected = [
             'links' => [
-                'self' => 'http://api.example.com/objects/2',
+                'self' => 'http://api.example.com/documents/2',
                 'home' => 'http://api.example.com/home',
             ],
             'data' => [
@@ -778,9 +772,23 @@ class ObjectsControllerTest extends IntegrationTestCase
                         'abstract' => 'abstract here',
                         'list' => ['one', 'two', 'three'],
                     ],
+                    'categories' => [
+                        [
+                            'name' => 'first-cat',
+                            'label' => 'First category',
+                            'params' => '100',
+                        ],
+                        [
+                            'name' => 'second-cat',
+                            'label' => 'Second category',
+                            'params' => null,
+                        ]
+                    ],
                     'lang' => 'en',
                     'publish_start' => '2016-05-13T07:09:23+00:00',
                     'publish_end' => '2016-05-13T07:09:23+00:00',
+                    'another_title' => null,
+                    'another_description' => null,
                 ],
                 'meta' => [
                     'locked' => true,
@@ -828,7 +836,7 @@ class ObjectsControllerTest extends IntegrationTestCase
         ];
 
         $this->configRequestHeaders();
-        $this->get('/objects/2');
+        $this->get('/documents/2');
         $result = json_decode((string)$this->_response->getBody(), true);
 
         $this->assertResponseCode(200);
@@ -917,7 +925,7 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->assertContentType('application/vnd.api+json');
 
         // restore object -> deleted = false
-        $objectsTable = TableRegistry::get('Objects');
+        $objectsTable = TableRegistry::getTableLocator()->get('Objects');
         $object = $objectsTable->get(6);
         $object->deleted = false;
         $this->authUser();
@@ -1002,7 +1010,7 @@ class ObjectsControllerTest extends IntegrationTestCase
         static::assertArrayHasKey('attributes', $result['data']);
         static::assertArrayHasKey('status', $result['data']['attributes']);
         $this->assertHeader('Location', 'http://api.example.com/documents/' . $newId);
-        static::assertTrue(TableRegistry::get('Documents')->exists($data['attributes']));
+        static::assertTrue(TableRegistry::getTableLocator()->get('Documents')->exists($data['attributes']));
     }
 
     /**
@@ -1034,7 +1042,7 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->assertContentType('application/vnd.api+json');
         static::assertArrayHasKey('error', $result);
         static::assertArraySubset($expected, $result['error']);
-        static::assertFalse(TableRegistry::get('Documents')->exists($data['attributes']));
+        static::assertFalse(TableRegistry::getTableLocator()->get('Documents')->exists($data['attributes']));
     }
 
     /**
@@ -1066,7 +1074,7 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->assertContentType('application/vnd.api+json');
         static::assertArrayHasKey('error', $result);
         static::assertArraySubset($expected, $result['error']);
-        static::assertFalse(TableRegistry::get('Documents')->exists($data['attributes']));
+        static::assertFalse(TableRegistry::getTableLocator()->get('Documents')->exists($data['attributes']));
     }
 
     /**
@@ -1149,7 +1157,7 @@ class ObjectsControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(200);
         $this->assertContentType('application/vnd.api+json');
-        $document = TableRegistry::get('Documents')->get('2');
+        $document = TableRegistry::getTableLocator()->get('Documents')->get('2');
         static::assertEquals($newTitle, $document->get('title'));
         static::assertEquals('documents', $document->get('type'));
         static::assertEquals('on', $document->get('status'));
@@ -1185,8 +1193,8 @@ class ObjectsControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(409);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals('title two', TableRegistry::get('Documents')->get(3)->get('title'));
-        $this->assertEquals('title one', TableRegistry::get('Documents')->get(2)->get('title'));
+        $this->assertEquals('title two', TableRegistry::getTableLocator()->get('Documents')->get(3)->get('title'));
+        $this->assertEquals('title one', TableRegistry::getTableLocator()->get('Documents')->get(2)->get('title'));
 
         $this->configRequestHeaders('PATCH', $authHeader);
         $this->patch('/profiles/3', json_encode(compact('data')));
@@ -1220,7 +1228,7 @@ class ObjectsControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(400);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals('title-one', TableRegistry::get('Documents')->get(2)->get('uname'));
+        $this->assertEquals('title-one', TableRegistry::getTableLocator()->get('Documents')->get(2)->get('uname'));
 
         $this->configRequestHeaders('PATCH', $authHeader);
         $data['id'] = 33;
@@ -1246,14 +1254,14 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->delete('/documents/3');
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
+        $this->assertResponseEmpty();
 
         $this->configRequestHeaders();
         $this->get('/documents/3');
         $this->assertResponseCode(404);
         $this->assertContentType('application/vnd.api+json');
 
-        $docDeleted = TableRegistry::get('Documents')->get(7);
+        $docDeleted = TableRegistry::getTableLocator()->get('Documents')->get(7);
         $this->assertEquals($docDeleted->deleted, 1);
 
         $this->configRequestHeaders('DELETE', $authHeader);
@@ -1308,6 +1316,18 @@ class ObjectsControllerTest extends IntegrationTestCase
                             'abstract' => 'abstract here',
                             'list' => ['one', 'two', 'three'],
                         ],
+                        'categories' => [
+                            [
+                                'name' => 'first-cat',
+                                'label' => 'First category',
+                                'params' => '100',
+                            ],
+                            [
+                                'name' => 'second-cat',
+                                'label' => 'Second category',
+                                'params' => null,
+                            ]
+                        ],
                         'lang' => 'en',
                         'publish_start' => '2016-05-13T07:09:23+00:00',
                         'publish_end' => '2016-05-13T07:09:23+00:00',
@@ -1349,8 +1369,8 @@ class ObjectsControllerTest extends IntegrationTestCase
                         'created_by' => 1,
                         'modified_by' => 1,
                         'relation' => [
-                            'priority' => 2,
-                            'inv_priority' => 1,
+                            'priority' => 1,
+                            'inv_priority' => 2,
                             'params' => null,
                         ],
                     ],
@@ -1807,7 +1827,6 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->post('/documents/2/relationships/test', json_encode(compact('data')));
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
         $this->assertResponseEmpty();
     }
 
@@ -1873,7 +1892,6 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->_sendRequest('/documents/2/relationships/test', 'DELETE', json_encode(compact('data')));
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
         $this->assertResponseEmpty();
     }
 
@@ -2028,7 +2046,6 @@ class ObjectsControllerTest extends IntegrationTestCase
         $this->patch('/documents/2/relationships/test', json_encode(compact('data')));
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
         $this->assertResponseEmpty();
     }
 
@@ -2231,6 +2248,18 @@ class ObjectsControllerTest extends IntegrationTestCase
                     'extra' => [
                         'abstract' => 'abstract here',
                         'list' => ['one', 'two', 'three'],
+                    ],
+                    'categories' => [
+                        [
+                            'name' => 'first-cat',
+                            'label' => 'First category',
+                            'params' => '100',
+                        ],
+                        [
+                            'name' => 'second-cat',
+                            'label' => 'Second category',
+                            'params' => null,
+                        ]
                     ],
                     'lang' => 'en',
                     'publish_start' => '2016-05-13T07:09:23+00:00',

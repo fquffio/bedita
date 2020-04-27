@@ -33,12 +33,14 @@ class UniqueNameBehaviorTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
     ];
 
     /**
@@ -98,10 +100,10 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testUniqueUser($username, $uname)
     {
-        $Users = TableRegistry::get('Users');
+        $Users = TableRegistry::getTableLocator()->get('Users');
         $user = $Users->newEntity();
 
-        $Users->patchEntity($user, compact('username'));
+        $user = $Users->patchEntity($user, compact('username'));
         $Users->uniqueName($user);
         $user->type = 'users';
         $Users->save($user);
@@ -165,7 +167,7 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testGenerateUniqueName($username, $name, $config)
     {
-        $Users = TableRegistry::get('Users');
+        $Users = TableRegistry::getTableLocator()->get('Users');
         $user = $Users->newEntity();
         $Users->patchEntity($user, compact('username', 'name'));
         $behavior = $Users->behaviors()->get('UniqueName');
@@ -223,7 +225,7 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testUniqueNameExists($uname, $id, $expected)
     {
-        $Users = TableRegistry::get('Users');
+        $Users = TableRegistry::getTableLocator()->get('Users');
         $behavior = $Users->behaviors()->get('UniqueName');
         $result = $behavior->uniqueNameExists($uname, $id);
 
@@ -279,11 +281,11 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testUniqueNameFromValue($value, $expected, array $cfg, $regenerate)
     {
-        $behavior = TableRegistry::get('Objects')->behaviors()->get('UniqueName');
+        $behavior = TableRegistry::getTableLocator()->get('Objects')->behaviors()->get('UniqueName');
         $result = $behavior->uniqueNameFromValue($value, $regenerate, $cfg);
 
         if ($regenerate) {
-            $cfg = array_merge($behavior->config(), $cfg);
+            $cfg = array_merge($behavior->getConfig(), $cfg);
             $result = substr($result, 0, strlen($result) - $cfg['hashlength']);
         }
         $this->assertEquals($result, $expected);
@@ -298,7 +300,7 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testUniqueNameMissing()
     {
-        $Documents = TableRegistry::get('Documents');
+        $Documents = TableRegistry::getTableLocator()->get('Documents');
         $behavior = $Documents->behaviors()->get('UniqueName');
 
         $data = ['title' => 'Some data', 'uname' => 'some-data'];
@@ -326,7 +328,7 @@ class UniqueNameBehaviorTest extends TestCase
      */
     public function testBeforeSave()
     {
-        $Documents = TableRegistry::get('Documents');
+        $Documents = TableRegistry::getTableLocator()->get('Documents');
         $entity = $Documents->newEntity([
             'title' => 'uh là la'
         ]);

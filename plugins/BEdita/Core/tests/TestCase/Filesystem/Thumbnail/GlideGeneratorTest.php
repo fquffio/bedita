@@ -33,10 +33,10 @@ class GlideGeneratorTest extends TestCase
      * @var string[]
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.streams',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Streams',
     ];
 
     /**
@@ -68,7 +68,7 @@ class GlideGeneratorTest extends TestCase
         parent::setUp();
 
         FilesystemRegistry::setConfig(Configure::read('Filesystem'));
-        $this->Streams = TableRegistry::get('Streams');
+        $this->Streams = TableRegistry::getTableLocator()->get('Streams');
 
         $this->generator = new GlideGenerator();
         $this->generator->initialize([]);

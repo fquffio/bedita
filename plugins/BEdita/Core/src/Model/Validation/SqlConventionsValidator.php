@@ -13,7 +13,7 @@
 
 namespace BEdita\Core\Model\Validation;
 
-use BEdita\Core\Plugin;
+use Cake\Core\Plugin;
 use Cake\Database\Schema\TableSchema;
 use Cake\Utility\Hash;
 use Cake\Utility\Inflector;
@@ -65,7 +65,7 @@ class SqlConventionsValidator extends Validator
      *
      * @var string
      */
-    const ALLOWED_DUPLICATES = 'created,description,enabled,expires,id,label,modified,name,params,priority,uuid,tree_left,tree_right,lang,status,created_by,modified_by';
+    const ALLOWED_DUPLICATES = 'created,core_type,description,enabled,expires,id,label,modified,name,params,priority,uuid,tree_left,tree_right,lang,status,created_by,modified_by';
 
     /**
      * List of reserved words.

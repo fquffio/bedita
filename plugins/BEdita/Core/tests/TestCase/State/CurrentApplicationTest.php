@@ -39,8 +39,8 @@ class CurrentApplicationTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.applications',
-        'plugin.BEdita/Core.config',
+        'plugin.BEdita/Core.Applications',
+        'plugin.BEdita/Core.Config',
     ];
 
     /**
@@ -50,7 +50,7 @@ class CurrentApplicationTest extends TestCase
     {
         parent::setUp();
 
-        $this->Applications = TableRegistry::get('Applications');
+        $this->Applications = TableRegistry::getTableLocator()->get('Applications');
     }
 
     /**

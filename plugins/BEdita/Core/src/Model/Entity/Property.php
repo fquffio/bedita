@@ -44,8 +44,8 @@ use Cake\Utility\Inflector;
  */
 class Property extends Entity implements JsonApiSerializable
 {
-
     use JsonApiModelTrait;
+    use ObjectTypeNameTrait;
 
     /**
      * {@inheritDoc}
@@ -97,7 +97,7 @@ class Property extends Entity implements JsonApiSerializable
         }
 
         try {
-            $this->_properties['property_type'] = TableRegistry::get('PropertyTypes')
+            $this->_properties['property_type'] = TableRegistry::getTableLocator()->get('PropertyTypes')
                 ->get($this->property_type_id, [
                     'cache' => ObjectTypesTable::CACHE_CONFIG,
                 ]);
@@ -136,7 +136,7 @@ class Property extends Entity implements JsonApiSerializable
         $propertyTypes = Cache::remember(
             'property_types',
             function () {
-                return TableRegistry::get('PropertyTypes')->find()
+                return TableRegistry::getTableLocator()->get('PropertyTypes')->find()
                     ->indexBy('name')
                     ->toArray();
             },
@@ -155,47 +155,6 @@ class Property extends Entity implements JsonApiSerializable
         $this->property_type_id = $this->property_type->id;
 
         return $this->property_type->name;
-    }
-
-    /**
-     * Getter for `object_type_name` virtual property.
-     *
-     * @return string
-     */
-    protected function _getObjectTypeName()
-    {
-        if (!$this->object_type) {
-            try {
-                $this->object_type = TableRegistry::get('ObjectTypes')->get($this->object_type_id);
-            } catch (RecordNotFoundException $e) {
-                return null;
-            } catch (InvalidPrimaryKeyException $e) {
-                return null;
-            }
-        }
-
-        return $this->object_type->name;
-    }
-
-    /**
-     * Setter for `object_type` virtual property.
-     *
-     * @param string $objectTypeName Object type name.
-     * @return string
-     */
-    protected function _setObjectTypeName($objectTypeName)
-    {
-        try {
-            $this->object_type = TableRegistry::get('ObjectTypes')->get($objectTypeName);
-            $this->object_type_id = $this->object_type->id;
-        } catch (RecordNotFoundException $e) {
-            $this->object_type = null;
-            $this->object_type_id = null;
-
-            return null;
-        }
-
-        return $objectTypeName;
     }
 
     /**

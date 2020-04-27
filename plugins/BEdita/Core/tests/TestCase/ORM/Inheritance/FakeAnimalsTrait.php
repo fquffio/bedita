@@ -24,10 +24,10 @@ trait FakeAnimalsTrait
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
-        'plugin.BEdita/Core.fake_mammals',
-        'plugin.BEdita/Core.fake_felines',
-        'plugin.BEdita/Core.fake_articles',
+        'plugin.BEdita/Core.FakeAnimals',
+        'plugin.BEdita/Core.FakeMammals',
+        'plugin.BEdita/Core.FakeFelines',
+        'plugin.BEdita/Core.FakeArticles',
     ];
 
     /**
@@ -65,9 +65,9 @@ trait FakeAnimalsTrait
      */
     public function setupTables()
     {
-        $this->fakeFelines = TableRegistry::get('FakeFelines', $this->tableOptions);
-        $this->fakeMammals = TableRegistry::get('FakeMammals', $this->tableOptions);
-        $this->fakeAnimals = TableRegistry::get('FakeAnimals');
+        $this->fakeFelines = TableRegistry::getTableLocator()->get('FakeFelines', $this->tableOptions);
+        $this->fakeMammals = TableRegistry::getTableLocator()->get('FakeMammals', $this->tableOptions);
+        $this->fakeAnimals = TableRegistry::getTableLocator()->get('FakeAnimals');
     }
 
     /**

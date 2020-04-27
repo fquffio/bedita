@@ -75,19 +75,8 @@ class ObjectsTable extends Table
         $this->setPrimaryKey('id');
         $this->setDisplayField('title');
 
-        $this->addBehavior('Timestamp');
-        $this->addBehavior('BEdita/Core.DataCleanup');
-        $this->addBehavior('BEdita/Core.UserModified');
-        $this->addBehavior('BEdita/Core.Relations');
-        $this->addBehavior('BEdita/Core.CustomProperties');
-        $this->addBehavior('BEdita/Core.UniqueName');
-        $this->addBehavior('BEdita/Core.Searchable', [
-            'fields' => [
-                'title' => 10,
-                'description' => 7,
-                'body' => 5,
-            ],
-        ]);
+        $this->addBehavior('BEdita/Core.ObjectModel');
+        $this->addBehavior('BEdita/Core.Categories');
 
         $this->belongsTo('ObjectTypes', [
             'foreignKey' => 'object_type_id',
@@ -112,6 +101,24 @@ class ObjectsTable extends Table
             'through' => 'BEdita/Core.Trees',
             'foreignKey' => 'object_id',
             'targetForeignKey' => 'parent_id',
+            'cascadeCallbacks' => true,
+        ]);
+        $this->belongsToMany('Categories', [
+            'className' => 'BEdita/Core.Categories',
+            'through' => 'BEdita/Core.ObjectCategories',
+            'foreignKey' => 'object_id',
+            'targetForeignKey' => 'category_id',
+            'sort' => ['name' => 'ASC'],
+            'finder' => 'enabled',
+            'cascadeCallbacks' => true,
+        ]);
+        $this->belongsToMany('Tags', [
+            'className' => 'BEdita/Core.Tags',
+            'through' => 'BEdita/Core.ObjectTags',
+            'foreignKey' => 'object_id',
+            'targetForeignKey' => 'category_id',
+            'sort' => ['name' => 'ASC'],
+            'finder' => 'enabled',
             'cascadeCallbacks' => true,
         ]);
         $this->hasMany('TreeNodes', [
@@ -163,7 +170,7 @@ class ObjectsTable extends Table
      *
      * @param \Cake\Datasource\EntityInterface $entity Entity being saved.
      * @return void
-     * @throws \Cake\Network\Exception\BadRequestException If a wrong lang tag is specified
+     * @throws \Cake\Http\Exception\BadRequestException If a wrong lang tag is specified
      */
     protected function checkLangTag(EntityInterface $entity)
     {
@@ -387,6 +394,88 @@ class ObjectsTable extends Table
     {
         return $query->contain('Translations', function (Query $query) use ($options) {
             return $query->where(['Translations.lang' => $options['lang']]);
+        });
+    }
+
+    /**
+     * Finder for available objects based on these rules:
+     *  - `status` should be acceptable (=> via `findStatusLevel`)
+     *  - `deleted` should be 0
+     *
+     * @param \Cake\ORM\Query $query Query object instance.
+     * @return \Cake\ORM\Query
+     */
+    protected function findAvailable(Query $query)
+    {
+        if (Configure::check('Status.level')) {
+            $query = $query->find('statusLevel', [Configure::read('Status.level')]);
+        }
+
+        return $query->where(['deleted' => 0]);
+    }
+
+    /**
+     * Finder to get an object by ID or 'uname'
+     *
+     * @param \Cake\ORM\Query $query Query object instance.
+     * @param array $options Array with ID or uname as first element.
+     * @return \Cake\ORM\Query
+     */
+    protected function findUnameId(Query $query, array $options)
+    {
+        $id = (string)Hash::get($options, '0');
+        if (is_numeric($id)) {
+            return $query->where([$this->aliasField('id') => (int)$id]);
+        }
+
+        return $query->where([$this->aliasField('uname') => $id]);
+    }
+
+    /**
+     * Finder for categories by name.
+     *
+     * @param \Cake\ORM\Query $query Query object instance.
+     * @param array $options Category names.
+     * @return \Cake\ORM\Query
+     */
+    protected function findCategories(Query $query, array $options)
+    {
+        return $this->categoriesQuery('Categories', $query, $options);
+    }
+
+    /**
+     * Finder for tags by name.
+     *
+     * @param \Cake\ORM\Query $query Query object instance.
+     * @param array $options Tag names.
+     * @return \Cake\ORM\Query
+     */
+    protected function findTags(Query $query, array $options)
+    {
+        return $this->categoriesQuery('Tags', $query, $options);
+    }
+
+    /**
+     * Finder for tags and categories by name.
+     * $options array MUST contain a list of category/tag names or a single element with a comma separated list.
+     *
+     * @param string $assoc Association name, 'Tags' or 'Categories'
+     * @param Query $query Query object instance.
+     * @param array $options Tag or category names.
+     * @return Query
+     */
+    protected function categoriesQuery(string $assoc, Query $query, array $options)
+    {
+        /**
+         * If a single element is passed with comma separated values
+         * a new array is created fromm it.
+         */
+        if (count($options) === 1) {
+            $options = array_filter(explode(',', reset($options)));
+        }
+
+        return $query->distinct()->innerJoinWith($assoc, function (Query $query) use ($assoc, $options) {
+            return $query->where([sprintf('%s.name IN', $assoc) => $options]);
         });
     }
 }

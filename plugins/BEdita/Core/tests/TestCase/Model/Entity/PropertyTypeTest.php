@@ -37,7 +37,7 @@ class PropertyTypeTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
+        'plugin.BEdita/Core.PropertyTypes',
     ];
 
     /**
@@ -46,7 +46,7 @@ class PropertyTypeTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->PropertyTypes = TableRegistry::get('PropertyTypes');
+        $this->PropertyTypes = TableRegistry::getTableLocator()->get('PropertyTypes');
     }
 
     /**

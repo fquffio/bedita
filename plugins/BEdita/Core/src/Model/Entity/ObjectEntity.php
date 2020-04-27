@@ -57,7 +57,6 @@ use Cake\Routing\Router;
  */
 class ObjectEntity extends Entity implements JsonApiSerializable
 {
-
     use JsonApiTrait {
         listAssociations as protected jsonApiListAssociations;
         getMeta as protected jsonApiGetMeta;
@@ -102,11 +101,38 @@ class ObjectEntity extends Entity implements JsonApiSerializable
     ];
 
     /**
+     * See if a property has been set in an entity.
+     * Could be set in `_properties` array or a virtual one.
+     * Options to exclude hidden properties and to include virtual properties.
+     *
+     * @param string $property Property name
+     * @param bool $hidden Include hidden (default true)
+     * @param bool $virtual Include virtual (default false)
+     * @return bool
+     */
+    public function hasProperty(string $property, bool $hidden = true, bool $virtual = false)
+    {
+        if ($hidden && !$virtual) {
+            return array_key_exists($property, $this->_properties);
+        }
+
+        $properties = array_keys($this->_properties);
+        if (!$hidden) {
+            $properties = array_diff($properties, $this->_hidden);
+        }
+        if ($virtual) {
+            $properties = array_merge($properties, $this->_virtual);
+        }
+
+        return in_array($property, $properties);
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function getTable()
     {
-        return TableRegistry::get($this->type ?: $this->getSource());
+        return TableRegistry::getTableLocator()->get($this->type ?: $this->getSource());
     }
 
     /**
@@ -153,7 +179,7 @@ class ObjectEntity extends Entity implements JsonApiSerializable
     protected static function listAssociations(Table $Table, array $hidden = [])
     {
         $associations = static::jsonApiListAssociations($Table, $hidden);
-        $associations = array_diff($associations, ['date_ranges']);
+        $associations = array_diff($associations, ['date_ranges', 'categories', 'tags']);
 
         return $associations;
     }
@@ -204,10 +230,13 @@ class ObjectEntity extends Entity implements JsonApiSerializable
                 $included = array_merge($included, $entities);
             }
 
-            $relationships[$relationship] = compact('data') + [
+            $relationships[$relationship] = [
                 'links' => compact('related', 'self'),
             ];
-            unset($data);
+            if (isset($data)) {
+                $relationships[$relationship] += compact('data');
+                unset($data);
+            }
         }
 
         return [$relationships, $included];
@@ -216,9 +245,9 @@ class ObjectEntity extends Entity implements JsonApiSerializable
     /**
      * {@inheritDoc}
      */
-    public function visibleProperties()
+    public function getVisible()
     {
-        $visible = parent::visibleProperties();
+        $visible = parent::getVisible();
         $this->loadObjectType();
         if (!$this->object_type) {
             return $visible;
@@ -239,7 +268,7 @@ class ObjectEntity extends Entity implements JsonApiSerializable
         if (!$this->object_type) {
             try {
                 $typeId = $this->object_type_id ?: $this->getSource();
-                $this->object_type = TableRegistry::get('ObjectTypes')->get($typeId);
+                $this->object_type = TableRegistry::getTableLocator()->get('ObjectTypes')->get($typeId);
             } catch (RecordNotFoundException $e) {
             } catch (InvalidPrimaryKeyException $e) {
             }
@@ -270,7 +299,7 @@ class ObjectEntity extends Entity implements JsonApiSerializable
     protected function _setType($type)
     {
         try {
-            $this->object_type = TableRegistry::get('ObjectTypes')->get($type);
+            $this->object_type = TableRegistry::getTableLocator()->get('ObjectTypes')->get($type);
             $this->object_type_id = $this->object_type->id;
             $this->setDirty('object_type_id', true);
         } catch (RecordNotFoundException $e) {

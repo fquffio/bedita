@@ -17,7 +17,7 @@ use BEdita\Core\Shell\Task\InitSchemaTask;
 use Cake\Console\Shell;
 use Cake\Core\Plugin;
 use Cake\Database\Connection;
-use Cake\Database\Schema\Table;
+use Cake\Database\Schema\TableSchema;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\ConsoleIntegrationTestCase;
@@ -76,7 +76,7 @@ class InitSchemaTaskTest extends ConsoleIntegrationTestCase
             throw new \RuntimeException('Unable to use database connection');
         }
 
-        $table = new Table('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
+        $table = new TableSchema('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
         foreach ($table->createSql($connection) as $statement) {
             $connection->query($statement);
         }
@@ -107,7 +107,7 @@ class InitSchemaTaskTest extends ConsoleIntegrationTestCase
         $this->assertErrorEmpty();
         static::assertCount(count($schema) + 1, $connection->getSchemaCollection()->listTables());
 
-        return TableRegistry::get('ObjectTypes')->find()->count();
+        return TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count();
     }
 
     /**
@@ -122,7 +122,7 @@ class InitSchemaTaskTest extends ConsoleIntegrationTestCase
             throw new \RuntimeException('Unable to use database connection');
         }
 
-        $table = new Table('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
+        $table = new TableSchema('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
         foreach ($table->createSql($connection) as $statement) {
             $connection->query($statement);
         }
@@ -174,7 +174,7 @@ class InitSchemaTaskTest extends ConsoleIntegrationTestCase
             throw new \RuntimeException('Unable to use database connection');
         }
 
-        $table = new Table('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
+        $table = new TableSchema('foo_bar', ['foo' => ['type' => 'string', 'length' => 255, 'null' => true, 'default' => null]]);
         foreach ($table->createSql($connection) as $statement) {
             $connection->query($statement);
         }
@@ -187,6 +187,6 @@ class InitSchemaTaskTest extends ConsoleIntegrationTestCase
         $this->assertErrorEmpty();
         static::assertCount(count($schema) + 1, $connection->getSchemaCollection()->listTables());
 
-        static::assertEquals($notSeededCount, TableRegistry::get('ObjectTypes')->find()->count());
+        static::assertEquals($notSeededCount, TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count());
     }
 }

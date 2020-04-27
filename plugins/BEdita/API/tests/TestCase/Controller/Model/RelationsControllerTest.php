@@ -126,9 +126,9 @@ class RelationsControllerTest extends IntegrationTestCase
                     'type' => 'relations',
                     'attributes' => [
                         'name' => 'test_abstract',
-                        'label' => 'Test relation between abstract types',
+                        'label' => 'Test relation involving abstract types',
                         'inverse_name' => 'inverse_test_abstract',
-                        'inverse_label' => 'Inverse test relation between abstract types',
+                        'inverse_label' => 'Inverse test relation involving abstract types',
                         'description' => 'Sample description.',
                         'params' => null,
                     ],
@@ -193,7 +193,7 @@ class RelationsControllerTest extends IntegrationTestCase
             'data' => [],
         ];
 
-        TableRegistry::get('Relations')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Relations')->deleteAll([]);
 
         $this->configRequestHeaders();
         $this->get('/model/relations');
@@ -323,7 +323,7 @@ class RelationsControllerTest extends IntegrationTestCase
         $this->assertResponseCode(201);
         $this->assertContentType('application/vnd.api+json');
 
-        $relation = TableRegistry::get('Relations')
+        $relation = TableRegistry::getTableLocator()->get('Relations')
             ->find()
             ->order(['id' => 'DESC'])
             ->first();
@@ -351,7 +351,7 @@ class RelationsControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $Relations = TableRegistry::get('Relations');
+        $Relations = TableRegistry::getTableLocator()->get('Relations');
         $count = $Relations->find()->count();
 
         $this->configRequestHeaders('POST', $this->getUserAuthHeader());
@@ -386,7 +386,7 @@ class RelationsControllerTest extends IntegrationTestCase
         $this->assertResponseCode(200);
         $this->assertContentType('application/vnd.api+json');
 
-        $Relations = TableRegistry::get('Relations');
+        $Relations = TableRegistry::getTableLocator()->get('Relations');
         $entity = $Relations->get(1);
         $this->assertEquals('new label', $entity->get('label'));
     }
@@ -409,7 +409,7 @@ class RelationsControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $Relations = TableRegistry::get('Relations');
+        $Relations = TableRegistry::getTableLocator()->get('Relations');
         $expected = $Relations->get(1)->get('label');
 
         $this->configRequestHeaders('PATCH', $this->getUserAuthHeader());
@@ -434,8 +434,8 @@ class RelationsControllerTest extends IntegrationTestCase
         $this->delete('/model/relations/1');
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
-        $this->assertFalse(TableRegistry::get('Relations')->exists(['id' => 1]));
+        $this->assertResponseEmpty();
+        $this->assertFalse(TableRegistry::getTableLocator()->get('Relations')->exists(['id' => 1]));
     }
 
     /**
@@ -477,7 +477,7 @@ class RelationsControllerTest extends IntegrationTestCase
                         'name' => 'documents',
                         'description' => null,
                         'table' => 'BEdita/Core.Objects',
-                        'associations' => null,
+                        'associations' => ['Categories'],
                         'hidden' => null,
                         'is_abstract' => false,
                         'parent_name' => 'objects',

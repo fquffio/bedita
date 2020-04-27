@@ -25,11 +25,11 @@ class ObjectRelationsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.object_relations',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.ObjectRelations',
     ];
 
     /**
@@ -41,7 +41,7 @@ class ObjectRelationsTableTest extends TestCase
     {
         parent::setUp();
 
-        $this->ObjectRelations = TableRegistry::get('ObjectRelations');
+        $this->ObjectRelations = TableRegistry::getTableLocator()->get('ObjectRelations');
     }
 
     /**

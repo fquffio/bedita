@@ -81,7 +81,7 @@ class CheckSchemaTask extends Shell
      */
     public function main()
     {
-        if (!Plugin::loaded('Migrations')) {
+        if (!Plugin::isLoaded('Migrations')) {
             $this->abort('Plugin "Migrations" must be loaded in order to perform schema checks');
         }
 
@@ -94,7 +94,9 @@ class CheckSchemaTask extends Shell
             $this->checkMigrationsStatus($connection);
         }
 
-        if ($connection->getDriver() instanceof Mysql) {
+        // check real vendor for DB like MariaDB or Aurora using MySQL driver where migration based check diff fails
+        $realVendor = Hash::get((array)$connection->config(), 'realVendor');
+        if (($connection->getDriver() instanceof Mysql) && empty($realVendor)) {
             $this->checkConventions($connection);
             $this->checkDiff($connection);
         } else {

@@ -23,10 +23,10 @@ use Cake\Event\Event;
 use Cake\Event\EventDispatcherTrait;
 use Cake\Event\EventListenerInterface;
 use Cake\Http\Client;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\UnauthorizedException;
 use Cake\I18n\Time;
 use Cake\Mailer\MailerAwareTrait;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\UnauthorizedException;
 use Cake\ORM\TableRegistry;
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
@@ -39,7 +39,6 @@ use Cake\Validation\Validator;
  */
 class SignupUserAction extends BaseAction implements EventListenerInterface
 {
-
     use EventDispatcherTrait;
     use MailerAwareTrait;
 
@@ -76,9 +75,9 @@ class SignupUserAction extends BaseAction implements EventListenerInterface
      */
     protected function initialize(array $config)
     {
-        $this->Users = TableRegistry::get('Users');
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
-        $this->Roles = TableRegistry::get('Roles');
+        $this->Users = TableRegistry::getTableLocator()->get('Users');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
+        $this->Roles = TableRegistry::getTableLocator()->get('Roles');
 
         $this->getEventManager()->on($this);
     }
@@ -87,8 +86,8 @@ class SignupUserAction extends BaseAction implements EventListenerInterface
      * {@inheritDoc}
      *
      * @return \BEdita\Core\Model\Entity\User
-     * @throws \Cake\Network\Exception\BadRequestException When validation of URL options fails
-     * @throws \Cake\Network\Exception\UnauthorizedException Upon external authorization check failure.
+     * @throws \Cake\Http\Exception\BadRequestException When validation of URL options fails
+     * @throws \Cake\Http\Exception\UnauthorizedException Upon external authorization check failure.
      */
     public function execute(array $data = [])
     {
@@ -195,7 +194,7 @@ class SignupUserAction extends BaseAction implements EventListenerInterface
      *
      * @param array $data The data to save
      * @return \BEdita\Core\Model\Entity\User|bool User created or `false` on error
-     * @throws \Cake\Network\Exception\UnauthorizedException Upon external authorization check failure.
+     * @throws \Cake\Http\Exception\UnauthorizedException Upon external authorization check failure.
      */
     protected function createUser(array $data)
     {
@@ -267,12 +266,12 @@ class SignupUserAction extends BaseAction implements EventListenerInterface
      *
      * @param array $data The signup data
      * @return \BEdita\Core\Model\Entity\AuthProvider AuthProvider entity
-     * @throws \Cake\Network\Exception\UnauthorizedException Upon external authorization check failure.
+     * @throws \Cake\Http\Exception\UnauthorizedException Upon external authorization check failure.
      */
     protected function checkExternalAuth(array $data)
     {
         /** @var \BEdita\Core\Model\Entity\AuthProvider $authProvider */
-        $authProvider = TableRegistry::get('AuthProviders')->find('enabled')
+        $authProvider = TableRegistry::getTableLocator()->get('AuthProviders')->find('enabled')
             ->where(['name' => $data['auth_provider']])
             ->first();
         if (empty($authProvider)) {
@@ -324,7 +323,7 @@ class SignupUserAction extends BaseAction implements EventListenerInterface
      *
      * @param array $roles Requested role names
      * @return \BEdita\Core\Model\Entity\Role[] requested role entities
-     * @throws \Cake\Network\Exception\BadRequestException When role validation fails
+     * @throws \Cake\Http\Exception\BadRequestException When role validation fails
      */
     protected function loadRoles(array $roles)
     {

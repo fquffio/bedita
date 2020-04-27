@@ -29,7 +29,6 @@ use Cake\Utility\Hash;
  */
 class Thumbnail
 {
-
     use StaticConfigTrait;
 
     /**
@@ -116,7 +115,12 @@ class Thumbnail
             }
         }
 
-        return compact('url', 'ready', 'acceptable');
+        $res = compact('url', 'ready');
+        if (isset($acceptable)) {
+            $res += compact('acceptable');
+        }
+
+        return $res;
     }
 
     /**

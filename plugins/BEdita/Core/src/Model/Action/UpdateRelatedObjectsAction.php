@@ -14,6 +14,8 @@
 namespace BEdita\Core\Model\Action;
 
 use BEdita\Core\Model\Entity\Folder;
+use BEdita\Core\ORM\Association\RelatedTo;
+use Cake\Utility\Hash;
 
 /**
  * Abstract class for updating relations between BEdita objects.
@@ -48,21 +50,46 @@ abstract class UpdateRelatedObjectsAction extends UpdateAssociatedAction
     protected function prepareData(array $data)
     {
         if (empty($data['entity']) || !($data['entity'] instanceof Folder) || $this->Association->getName() !== 'Parents') {
+            $this->setupPriority($data);
+
             return $data;
         }
 
         $table = $this->Association->junction();
         $entity = $table->find()
-            ->where([$table->association('Objects')->getForeignKey() => $data['entity']->id])
+            ->where([$table->getAssociation('Objects')->getForeignKey() => $data['entity']->id])
             ->firstOrFail();
         $relatedEntities = $data['relatedEntities'];
         if (is_array($relatedEntities) && count($relatedEntities) === 1) {
             $relatedEntities = reset($relatedEntities);
         }
 
-        $this->Association = $table->association('ParentObjects');
+        $this->Association = $table->getAssociation('ParentObjects');
         $this->setConfig('association', $this->Association);
 
         return compact('entity', 'relatedEntities') + $data;
+    }
+
+    /**
+     * Setup `priority` on `_joinData`.
+     * If relation is inverse switch `priority` and `inv_priority`.
+     *
+     * @param array $data Action data.
+     * @return void
+     */
+    protected function setupPriority(array &$data): void
+    {
+        if (!$this->Association instanceof RelatedTo || !$this->Association->isInverse()) {
+            return;
+        }
+
+        foreach ($data['relatedEntities'] as $related) {
+            $join = (array)$related->get('_joinData');
+            $priorities = [
+                'inv_priority' => Hash::get($join, 'priority'),
+                'priority' => Hash::get($join, 'inv_priority'),
+            ];
+            $related->set('_joinData', array_filter(array_merge($join, $priorities)));
+        }
     }
 }

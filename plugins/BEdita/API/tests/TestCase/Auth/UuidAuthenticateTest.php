@@ -34,18 +34,19 @@ class UuidAuthenticateTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.auth_providers',
-        'plugin.BEdita/Core.external_auth',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.AuthProviders',
+        'plugin.BEdita/Core.ExternalAuth',
+        'plugin.BEdita/Core.History',
     ];
 
     /**
@@ -185,7 +186,7 @@ class UuidAuthenticateTest extends TestCase
      */
     public function testAuthenticate($expected, $newUser, ServerRequest $request)
     {
-        $Users = TableRegistry::get('Users');
+        $Users = TableRegistry::getTableLocator()->get('Users');
         $count = $Users->find()->count();
 
         $dispatchedEvent = 0;
@@ -196,7 +197,7 @@ class UuidAuthenticateTest extends TestCase
             static::assertTrue(is_string(func_get_arg(2)));
         });
 
-        $authConfig = TableRegistry::get('AuthProviders')
+        $authConfig = TableRegistry::getTableLocator()->get('AuthProviders')
             ->find('authenticate')
             ->toArray();
 
@@ -219,7 +220,7 @@ class UuidAuthenticateTest extends TestCase
      *
      * @return void
      *
-     * @expectedException \Cake\Network\Exception\UnauthorizedException
+     * @expectedException \Cake\Http\Exception\UnauthorizedException
      * @expectedExceptionMessage MyExceptionMessage
      * @covers ::unauthenticated()
      */

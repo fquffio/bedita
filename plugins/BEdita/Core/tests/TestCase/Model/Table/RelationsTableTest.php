@@ -40,10 +40,10 @@ class RelationsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.relations',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Relations',
     ];
 
     /**
@@ -58,7 +58,7 @@ class RelationsTableTest extends TestCase
         Cache::drop('_bedita_object_types_');
         Cache::setConfig('_bedita_object_types_', ['className' => 'File']);
 
-        $this->Relations = TableRegistry::get('Relations');
+        $this->Relations = TableRegistry::getTableLocator()->get('Relations');
     }
 
     /**

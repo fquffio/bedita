@@ -32,16 +32,18 @@ class ListRelatedObjectsActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.streams',
-        'plugin.BEdita/Core.users',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Streams',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Categories',
+        'plugin.BEdita/Core.ObjectCategories',
     ];
 
     /**
@@ -103,14 +105,27 @@ class ListRelatedObjectsActionTest extends TestCase
                             'inv_priority' => 1,
                             'params' => null,
                         ],
+                        'categories' => [],
                     ],
                     [
                         'id' => 2,
                         'type' => 'documents',
                         '_joinData' => [
-                            'priority' => 1,
-                            'inv_priority' => 2,
+                            'priority' => 2,
+                            'inv_priority' => 1,
                             'params' => null,
+                        ],
+                        'categories' => [
+                            [
+                                'name' => 'first-cat',
+                                'label' => 'First category',
+                                'params' => '100',
+                            ],
+                            [
+                                'name' => 'second-cat',
+                                'label' => 'Second category',
+                                'params' => null,
+                            ],
                         ],
                     ],
                 ],
@@ -162,9 +177,21 @@ class ListRelatedObjectsActionTest extends TestCase
                         'id' => 2,
                         'type' => 'documents',
                         '_joinData' => [
-                            'priority' => 1,
-                            'inv_priority' => 2,
+                            'priority' => 2,
+                            'inv_priority' => 1,
                             'params' => null,
+                        ],
+                        'categories' => [
+                            [
+                                'name' => 'first-cat',
+                                'label' => 'First category',
+                                'params' => '100',
+                            ],
+                            [
+                                'name' => 'second-cat',
+                                'label' => 'Second category',
+                                'params' => null,
+                            ],
                         ],
                     ],
                 ],
@@ -240,7 +267,7 @@ class ListRelatedObjectsActionTest extends TestCase
         Configure::write('Status.level', $statusLevel);
 
         $alias = Inflector::camelize(Inflector::underscore($relation));
-        $association = TableRegistry::get($objectType)->association($alias);
+        $association = TableRegistry::getTableLocator()->get($objectType)->getAssociation($alias);
         $action = new ListRelatedObjectsAction(compact('association'));
 
         $result = $action(['primaryKey' => $id] + compact('list', 'only'));

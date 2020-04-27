@@ -53,7 +53,7 @@ class InheritanceEventHandlerTest extends TestCase
      */
     public function testImplementedEvents()
     {
-        $expected = ['Model.beforeSave', 'Model.afterDelete', 'Model.afterRules'];
+        $expected = ['Model.beforeSave', 'Model.afterSave', 'Model.afterDelete', 'Model.afterRules'];
 
         $handler = new InheritanceEventHandler();
         $implementedEvents = array_keys($handler->implementedEvents());
@@ -359,7 +359,7 @@ class InheritanceEventHandlerTest extends TestCase
     public function testApplicationRulesErrorsPropagation($expected, $rulesConfig)
     {
         foreach ($rulesConfig as $rule) {
-            $table = TableRegistry::get($rule['table']);
+            $table = TableRegistry::getTableLocator()->get($rule['table']);
             $options = $rule['options'];
             $table->getEventManager()->on(
                 'Model.buildRules',
@@ -399,7 +399,7 @@ class InheritanceEventHandlerTest extends TestCase
     {
         $eventDispatchedFelines = $eventDispatchedMammals = $eventDispatchedAnimals = 0;
         // Main table
-        $this->fakeFelines->eventManager()->on(
+        $this->fakeFelines->getEventManager()->on(
             'Model.beforeSave',
             function (Event $event, EntityInterface $entity, \ArrayObject $options) use (&$eventDispatchedFelines) {
                 $eventDispatchedFelines++;
@@ -409,7 +409,7 @@ class InheritanceEventHandlerTest extends TestCase
         );
 
         // Inherited table
-        $this->fakeMammals->eventManager()->on(
+        $this->fakeMammals->getEventManager()->on(
             'Model.beforeSave',
             function (Event $event, EntityInterface $entity, \ArrayObject $options) use (&$eventDispatchedMammals) {
                 $eventDispatchedMammals++;
@@ -420,7 +420,7 @@ class InheritanceEventHandlerTest extends TestCase
         );
 
         // Inherited table
-        $this->fakeAnimals->eventManager()->on(
+        $this->fakeAnimals->getEventManager()->on(
             'Model.beforeSave',
             function (Event $event, EntityInterface $entity, \ArrayObject $options) use (&$eventDispatchedAnimals) {
                 $eventDispatchedAnimals++;

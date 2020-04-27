@@ -31,11 +31,11 @@ class AsyncGeneratorTest extends TestCase
      * @var string[]
      */
     public $fixtures = [
-        'plugin.BEdita/Core.async_jobs',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.media',
-        'plugin.BEdita/Core.streams',
+        'plugin.BEdita/Core.AsyncJobs',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Media',
+        'plugin.BEdita/Core.Streams',
     ];
 
     /**
@@ -94,8 +94,8 @@ class AsyncGeneratorTest extends TestCase
 
         Thumbnail::setConfig('test', ['className' => TestGenerator::class]);
 
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
-        $this->Streams = TableRegistry::get('Streams');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
+        $this->Streams = TableRegistry::getTableLocator()->get('Streams');
         $this->generator = new AsyncGenerator();
         $this->generator->initialize(['baseGenerator' => 'test']);
     }

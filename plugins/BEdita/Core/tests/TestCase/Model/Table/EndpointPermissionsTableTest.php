@@ -39,11 +39,11 @@ class EndpointPermissionsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.endpoints',
-        'plugin.BEdita/Core.applications',
-        'plugin.BEdita/Core.endpoint_permissions',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.Endpoints',
+        'plugin.BEdita/Core.Applications',
+        'plugin.BEdita/Core.EndpointPermissions',
     ];
 
     /**
@@ -54,7 +54,7 @@ class EndpointPermissionsTableTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->EndpointPermissions = TableRegistry::get('EndpointPermissions');
+        $this->EndpointPermissions = TableRegistry::getTableLocator()->get('EndpointPermissions');
     }
 
     /**

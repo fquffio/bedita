@@ -1,5 +1,69 @@
 # ChangeLog
 
+## Version 4.1.0 - Cactus
+
+### API changes (4.1.0)
+
+* [#1638](https://github.com/bedita/bedita/issues/1638) Categories and Tags API
+* [#1636](https://github.com/bedita/bedita/pull/1636) Object & resources `/history` endpoint
+* [#1649](https://github.com/bedita/bedita/pull/1649) User opt-out, remove user data request #1578
+* [#1632](https://github.com/bedita/bedita/pull/1632) Add external **provider thumbs** to `/media/thumbs` response
+* [#1644](https://github.com/bedita/bedita/pull/1644) Fix `/` to `/home` redirect via explicit path
+
+### Core changes (4.1.0)
+
+* [#1624](https://github.com/bedita/bedita/issues/1624) Object and resource history data model
+* [#1639](https://github.com/bedita/bedita/pull/1639) Categories and Tags data model
+* [#1641](https://github.com/bedita/bedita/pull/1641) Refactor object table hierarchy and behaviors
+* [#1640](https://github.com/bedita/bedita/pull/1640) Introduce **core** property types, `core_type` flag
+* [#1634](https://github.com/bedita/bedita/pull/1634) Fix timezone save problem on datetime properties, `UTC` as default
+* [#1645](https://github.com/bedita/bedita/pull/1645) Use `TableRegistry::getTableLocator()`, fix deprecations
+* Introduce `TreeBehavior::nonAtomicRecover()`, handle recover actions inside external transactions
+* Fix deprecated code
+
+### Integration changes (4.1.0)
+
+* [#1643](https://github.com/bedita/bedita/pull/1643) Add MySQL 8 and Maria DB 10 to Travis CI
+* [#1646](https://github.com/bedita/bedita/pull/1646) PHP 7.4 Travis task added, PHP 7.1 removed
+* [#1635](https://github.com/bedita/bedita/pull/1635) Update code sniffer rules to PSR-12 viacakephp/codesniffer 3.2.*
+* [#1631](https://github.com/bedita/bedita/pull/1631) Avoid migrations transaction error on SQlite
+
+## Version 4.0.0 - Cactus
+
+### API changes (4.0.0)
+
+* [#1614](https://github.com/bedita/bedita/pull/1614) Block auth operations on blocked/deleted user
+* [#1604](https://github.com/bedita/bedita/pull/1604) Logged user cannot trash himself
+* [#1594](https://github.com/bedita/bedita/pull/1594) Fix Uploading XML or JSON files
+* [#1590](https://github.com/bedita/bedita/pull/1590) Add `meta.media_url` property in media objects
+* [#1582](https://github.com/bedita/bedita/issues/1582) Fix Relation with empty params can't be saved
+* [#1580](https://github.com/bedita/bedita/pull/1580) Signup new configuration options
+* [#1628](https://github.com/bedita/bedita/pull/1628) Custom error handler to avoid HTML on `trigger_error`
+* Add `locked` filter on objects
+
+### Core changes (4.0.0)
+
+* [#1625](https://github.com/bedita/bedita/pull/1625) Relations and Properties utilities
+* [#1613](https://github.com/bedita/bedita/pull/1613) Allow `+02` and `+0200` as TZ format in input date
+* [#1612](https://github.com/bedita/bedita/pull/1612) Fix `DefaultValues` config on core types
+* [#1589](https://github.com/bedita/bedita/pull/1589) Fix `DefaultValues` behavior
+* [#1607](https://github.com/bedita/bedita/pull/1607) Avoid bad side effects on DataCleanup (see #1601)
+* [#1595](https://github.com/bedita/bedita/pull/1595) New `streams removeOrphans` shell
+* [#1581](https://github.com/bedita/bedita/pull/1581) Fix created_by/modified_by foreign key check
+* [#1579](https://github.com/bedita/bedita/pull/1579) Permanent user removal and anonymization #1556
+* [#1592](https://github.com/bedita/bedita/pull/1592) Apply default values only on new objects (id available)
+* [#1583](https://github.com/bedita/bedita/pull/1583) Allow missing or empty `params` JSON object relations
+* Make user `email` changeable if null
+
+### Integration changes (4.0.0)
+
+* [#1616](https://github.com/bedita/bedita/pull/1616) Travis can't install mysql-5.7 on trusty
+* [#1619](https://github.com/bedita/bedita/pull/1619) Remove coverage on PG task
+* [#1605](https://github.com/bedita/bedita/pull/1605) Fix Docker permissions
+* [#1564](https://github.com/bedita/bedita/pull/1564) Set perms for webroot files in entrypoint.sh
+* Use `bedita/dev-tools` stable releases
+* Upgrade to `CakePHP 3.8.x` and support `PHP 7.3`
+
 ## Version 4.0.0.RC2 - Cactus
 
 ### API changes (4.0.0.RC2)

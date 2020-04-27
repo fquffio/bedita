@@ -20,10 +20,11 @@ use Cake\Core\Configure;
 use Cake\Core\Exception\Exception as CakeException;
 use Cake\Event\Event;
 use Cake\Event\EventManager;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\InternalErrorException;
+use Cake\Http\Exception\UnauthorizedException;
 use Cake\Mailer\Email;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\InternalErrorException;
-use Cake\Network\Exception\UnauthorizedException;
+use Cake\Mailer\TransportFactory;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
@@ -39,21 +40,22 @@ class SignupUserActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.async_jobs',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.trees',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.external_auth',
-        'plugin.BEdita/Core.auth_providers',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.object_relations',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.AsyncJobs',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.Trees',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.ExternalAuth',
+        'plugin.BEdita/Core.AuthProviders',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.History',
     ];
 
     /**
@@ -64,8 +66,8 @@ class SignupUserActionTest extends TestCase
         parent::setUp();
 
         Configure::write('Signup', []);
-        Email::dropTransport('default');
-        Email::setConfigTransport('default', [
+        TransportFactory::drop('default');
+        TransportFactory::setConfig('default', [
             'className' => 'Debug',
         ]);
     }
@@ -367,7 +369,7 @@ class SignupUserActionTest extends TestCase
      *
      * @return void
      *
-     * @expectedException \Cake\Network\Exception\InternalErrorException
+     * @expectedException \Cake\Http\Exception\InternalErrorException
      */
     public function testExceptionSendMail()
     {
@@ -385,7 +387,7 @@ class SignupUserActionTest extends TestCase
         EventManager::instance()->on('Auth.signup', function () use (&$eventDispatched) {
             $eventDispatched++;
 
-            throw new InternalErrorException;
+            throw new InternalErrorException();
         });
 
         $action = new SignupUserAction();
@@ -394,7 +396,7 @@ class SignupUserActionTest extends TestCase
             $action($data);
         } finally {
             static::assertSame(1, $eventDispatched, 'Event not dispatched');
-            static::assertFalse(TableRegistry::get('Users')->exists(['username' => 'testsignup']));
+            static::assertFalse(TableRegistry::getTableLocator()->get('Users')->exists(['username' => 'testsignup']));
         }
     }
 
@@ -428,7 +430,7 @@ class SignupUserActionTest extends TestCase
         $action($data);
 
         static::assertSame(1, $invoked);
-        $user = TableRegistry::get('Users')->find()->where(['username' => 'testsignup'])->first();
+        $user = TableRegistry::getTableLocator()->get('Users')->find()->where(['username' => 'testsignup'])->first();
         static::assertEquals('test.signup@example.com', $user->get('email'));
     }
 
@@ -454,7 +456,7 @@ class SignupUserActionTest extends TestCase
         $action = new SignupUserAction();
         $action($data);
 
-        $user = TableRegistry::get('Users')->find()->where(['username' => 'testsignup'])->first();
+        $user = TableRegistry::getTableLocator()->get('Users')->find()->where(['username' => 'testsignup'])->first();
         static::assertNull($user->get('email'));
     }
 

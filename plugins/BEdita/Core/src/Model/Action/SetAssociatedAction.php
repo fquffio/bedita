@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2016 ChannelWeb Srl, Chialab Srl
+ * Copyright 2020 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -14,7 +14,7 @@
 namespace BEdita\Core\Model\Action;
 
 use Cake\Datasource\EntityInterface;
-use Cake\Network\Exception\BadRequestException;
+use Cake\Http\Exception\BadRequestException;
 use Cake\ORM\Association\BelongsTo;
 use Cake\ORM\Association\BelongsToMany;
 use Cake\ORM\Association\HasMany;
@@ -27,7 +27,6 @@ use Cake\ORM\Association\HasOne;
  */
 class SetAssociatedAction extends UpdateAssociatedAction
 {
-
     use AssociatedTrait;
 
     /**
@@ -49,7 +48,11 @@ class SetAssociatedAction extends UpdateAssociatedAction
 
             $res = $this->toMany($entity, $relatedEntities);
             foreach ($relatedEntities as $relatedEntity) {
-                if ($relatedEntity->has('_joinData') && $relatedEntity->get('_joinData')->getErrors()) {
+                if (
+                    $relatedEntity->has('_joinData') &&
+                    ($relatedEntity->get('_joinData') instanceof EntityInterface) &&
+                    $relatedEntity->get('_joinData')->getErrors()
+                ) {
                     throw new BadRequestException([
                         'title' => __d('bedita', 'Error linking entities'),
                         'detail' => $relatedEntity->get('_joinData')->getErrors(),

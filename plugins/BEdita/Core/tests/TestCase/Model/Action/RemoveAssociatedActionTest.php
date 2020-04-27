@@ -33,10 +33,10 @@ class RemoveAssociatedActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
-        'plugin.BEdita/Core.fake_articles',
-        'plugin.BEdita/Core.fake_tags',
-        'plugin.BEdita/Core.fake_articles_tags',
+        'plugin.BEdita/Core.FakeAnimals',
+        'plugin.BEdita/Core.FakeArticles',
+        'plugin.BEdita/Core.FakeTags',
+        'plugin.BEdita/Core.FakeArticlesTags',
     ];
 
     /**
@@ -46,19 +46,19 @@ class RemoveAssociatedActionTest extends TestCase
     {
         parent::setUp();
 
-        TableRegistry::get('FakeTags')
+        TableRegistry::getTableLocator()->get('FakeTags')
             ->belongsToMany('FakeArticles', [
                 'joinTable' => 'fake_articles_tags',
             ]);
 
-        TableRegistry::get('FakeArticles')
+        TableRegistry::getTableLocator()->get('FakeArticles')
             ->belongsToMany('FakeTags', [
                 'joinTable' => 'fake_articles_tags',
             ])
             ->getSource()
             ->belongsTo('FakeAnimals');
 
-        TableRegistry::get('FakeAnimals')
+        TableRegistry::getTableLocator()->get('FakeAnimals')
             ->hasMany('FakeArticles');
     }
 
@@ -129,7 +129,7 @@ class RemoveAssociatedActionTest extends TestCase
             $this->expectExceptionMessage($expected->getMessage());
         }
 
-        $association = TableRegistry::get($table)->association($association);
+        $association = TableRegistry::getTableLocator()->get($table)->getAssociation($association);
         $action = new RemoveAssociatedAction(compact('association'));
 
         $entity = $association->getSource()->get($entity, ['contain' => [$association->getName()]]);

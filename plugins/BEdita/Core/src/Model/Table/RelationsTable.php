@@ -58,20 +58,20 @@ class RelationsTable extends Table
 
         $this->hasMany('ObjectRelations');
 
-        $through = TableRegistry::get('LeftRelationTypes', ['className' => 'RelationTypes']);
+        $through = TableRegistry::getTableLocator()->get('LeftRelationTypes', ['className' => 'RelationTypes']);
         $this->belongsToMany('LeftObjectTypes', [
             'className' => 'ObjectTypes',
-            'through' => $through->getRegistryAlias(),
+            'through' => $through,
             'foreignKey' => 'relation_id',
             'targetForeignKey' => 'object_type_id',
             'conditions' => [
                 $through->aliasField('side') => 'left',
             ],
         ]);
-        $through = TableRegistry::get('RightRelationTypes', ['className' => 'RelationTypes']);
+        $through = TableRegistry::getTableLocator()->get('RightRelationTypes', ['className' => 'RelationTypes']);
         $this->belongsToMany('RightObjectTypes', [
             'className' => 'ObjectTypes',
-            'through' => $through->getRegistryAlias(),
+            'through' => $through,
             'foreignKey' => 'relation_id',
             'targetForeignKey' => 'object_type_id',
             'conditions' => [

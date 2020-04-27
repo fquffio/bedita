@@ -13,6 +13,7 @@
 
 namespace BEdita\Core\Model\Action;
 
+use BEdita\Core\Model\Entity\ObjectRelation;
 use Cake\Collection\CollectionInterface;
 use Cake\Database\Expression\QueryExpression;
 use Cake\Datasource\EntityInterface;
@@ -91,7 +92,7 @@ class ListAssociatedAction extends BaseAction
             throw new InvalidPrimaryKeyException(__(
                 'Record not found in table "{0}" with primary key [{1}]',
                 $table->getTable(),
-                implode($primaryKey, ', ')
+                implode(', ', $primaryKey)
             ));
         }
 
@@ -132,7 +133,7 @@ class ListAssociatedAction extends BaseAction
     protected function buildInverseAssociation()
     {
         $sourceTable = $this->Association->getTarget();
-        $targetTable = TableRegistry::get(static::INVERSE_ASSOCIATION_NAME, [
+        $targetTable = TableRegistry::getTableLocator()->get(static::INVERSE_ASSOCIATION_NAME, [
             'className' => $this->Association->getSource()->getRegistryAlias(),
         ]);
         $targetTable->setTable($this->Association->getSource()->getTable());
@@ -228,12 +229,24 @@ class ListAssociatedAction extends BaseAction
                     $entity->setHidden([$inverseAssociation->getProperty()], true);
 
                     if (!empty($joinData)) {
+                        $this->prepareJoinEntity($joinData);
                         $entity->set('_joinData', $joinData);
                     }
 
                     return $entity;
                 });
             });
+    }
+
+    /**
+     * Prepare `joinData` entity.
+     *
+     * @param \Cake\Datasource\EntityInterface $joinData Join data entity.
+     * @return void
+     * @codeCoverageIgnore
+     */
+    protected function prepareJoinEntity(EntityInterface $joinData): void
+    {
     }
 
     /**

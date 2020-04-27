@@ -16,7 +16,8 @@ namespace BEdita\API\Controller;
 use BEdita\Core\Filesystem\Thumbnail;
 use BEdita\Core\Model\Entity\Stream;
 use Cake\Database\Expression\QueryExpression;
-use Cake\Network\Exception\BadRequestException;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Utility\Hash;
 
 /**
  * Controller for media.
@@ -65,7 +66,26 @@ class MediaController extends ObjectsController
             throw new BadRequestException(__d('bedita', 'Cannot generate thumbnails for more than {0} media at once', $maxLimit));
         }
 
-        return $ids;
+        return $this->getAvailableIds($ids);
+    }
+
+    /**
+     * Retrieve actual available IDs checking `status` and `deleted`
+     *
+     * @param array $ids Object ids array
+     * @return array
+     */
+    protected function getAvailableIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return $ids;
+        }
+        $available = $this->Table->find('available')
+            ->where(['id IN' => $ids])
+            ->select(['id'])
+            ->toArray();
+
+        return (array)Hash::extract($available, '{n}.id');
     }
 
     /**
@@ -85,7 +105,7 @@ class MediaController extends ObjectsController
         $preset = $this->request->getQuery('preset');
         $options = (array)$this->request->getQuery('options');
 
-        $thumbnails = $this->Table->association('Streams')->find()
+        $thumbnails = $this->Table->getAssociation('Streams')->find()
             ->where(function (QueryExpression $exp) use ($ids) {
                 return $exp->in('object_id', $ids);
             })
@@ -99,7 +119,40 @@ class MediaController extends ObjectsController
             })
             ->toList();
 
+        $this->fetchProviderThumbs($ids, $thumbnails);
+
         $this->set('_meta', compact('thumbnails'));
         $this->set('_serialize', []);
+    }
+
+    /**
+     * Add provider thumbnails to thumbnails array for remote media
+     *
+     * @param array $ids Media ids
+     * @param array $thumbnails Thumbnail array
+     * @return void
+     */
+    protected function fetchProviderThumbs(array $ids, array &$thumbnails): void
+    {
+        $mediaIds = array_diff($ids, (array)Hash::extract($thumbnails, '{n}.id'));
+        if (empty($mediaIds)) {
+            return;
+        }
+
+        $conditions = [
+            'id IN' => $mediaIds,
+            $this->Table->aliasField('provider_thumbnail') . ' IS NOT NULL',
+        ];
+        $thumbs = $this->Table->find()
+            ->where($conditions)
+            ->select(['id', 'provider_thumbnail'])
+            ->toArray();
+        foreach ($thumbs as $thumb) {
+            $thumbnails[] = [
+                'id' => $thumb['id'],
+                'ready' => true,
+                'url' => $thumb['provider_thumbnail'],
+            ];
+        }
     }
 }

@@ -38,7 +38,7 @@ class AsyncJobTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.async_jobs',
+        'plugin.BEdita/Core.AsyncJobs',
     ];
 
     /**
@@ -57,7 +57,7 @@ class AsyncJobTest extends TestCase
     {
         parent::setUp();
 
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
 
         if (in_array('async_jobs', ConnectionManager::configured())) {
             $this->connection = ConnectionManager::getConfig('async_jobs');

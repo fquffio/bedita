@@ -73,7 +73,7 @@ class StaticProperty extends Property
     protected function _setTable($table)
     {
         if (!($table instanceof Table)) {
-            $table = TableRegistry::get($table);
+            $table = TableRegistry::getTableLocator()->get($table);
         }
 
         $this->inferFromSchema($this->name, $table);
@@ -90,11 +90,11 @@ class StaticProperty extends Property
     {
         if (isset($this->_properties['table'])) {
             // Explicitly set.
-            return TableRegistry::get($this->_properties['table']);
+            return TableRegistry::getTableLocator()->get($this->_properties['table']);
         }
 
         if ($this->object_type_id) {
-            return TableRegistry::get($this->object_type_name);
+            return TableRegistry::getTableLocator()->get($this->object_type_name);
         }
 
         return null;
@@ -133,7 +133,7 @@ class StaticProperty extends Property
 
         // Property type.
         /** @var \BEdita\Core\Model\Table\PropertyTypesTable $propertyTypesTable */
-        $propertyTypesTable = TableRegistry::get('PropertyTypes');
+        $propertyTypesTable = TableRegistry::getTableLocator()->get('PropertyTypes');
         $this->property_type_name = $propertyTypesTable->detect($name, $table)->name;
 
         // Description and nullability.
@@ -169,7 +169,7 @@ class StaticProperty extends Property
         }
 
         $typeName = $this->table->getSchema()->getColumnType($this->name);
-        if (in_array($default, ['CURRENT_TIMESTAMP', 'now()']) && in_array($typeName, ['date', 'datetime', 'time', 'timestamp'])) {
+        if (in_array($default, ['CURRENT_TIMESTAMP', 'now()', 'current_timestamp()']) && in_array($typeName, ['date', 'datetime', 'time', 'timestamp'])) {
             // Default value is not meaningful in this case.
             return $this->_properties['default'] = null;
         }

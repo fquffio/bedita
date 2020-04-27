@@ -60,8 +60,7 @@ class OTPAuthenticate extends BaseAuthenticate
             'password' => null,
         ],
         'userModel' => 'Users',
-        'finder' => 'all',
-        'contain' => null,
+        'finder' => 'loginRoles',
         'passwordHasher' => 'Default',
         'expiry' => '+15 minutes',
         'generator' => null,
@@ -126,7 +125,7 @@ class OTPAuthenticate extends BaseAuthenticate
             'token_type' => 'otp',
         ];
 
-        $UserTokens = TableRegistry::get('UserTokens');
+        $UserTokens = TableRegistry::getTableLocator()->get('UserTokens');
         $userToken = $UserTokens->find('valid')->where($data)->first();
         if (!empty($userToken)) {
             $UserTokens->deleteOrFail($userToken);
@@ -159,7 +158,7 @@ class OTPAuthenticate extends BaseAuthenticate
             'expires' => new Time($this->getConfig('expiry')),
         ];
 
-        $UserTokens = TableRegistry::get('UserTokens');
+        $UserTokens = TableRegistry::getTableLocator()->get('UserTokens');
         $entity = $UserTokens->newEntity($data);
         $UserTokens->saveOrFail($entity);
         $this->dispatchEvent('Auth.userToken', [$entity]);

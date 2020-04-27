@@ -139,7 +139,7 @@ class PropertiesTable extends Table
      */
     public function beforeFind(Event $event, Query $query)
     {
-        $from = $query->from();
+        $from = $query->clause('from');
         if (empty($from)) {
             $query->find('type', ['both']);
         }
@@ -185,7 +185,7 @@ class PropertiesTable extends Table
 
         switch ($options[0]) {
             case 'static':
-                $table = TableRegistry::get('StaticProperties')
+                $table = TableRegistry::getTableLocator()->get('StaticProperties')
                     ->setAlias($this->getAlias());
                 $from = $table->getTable();
                 break;
@@ -196,7 +196,7 @@ class PropertiesTable extends Table
 
             case 'both':
             default:
-                $table = TableRegistry::get('StaticProperties')
+                $table = TableRegistry::getTableLocator()->get('StaticProperties')
                     ->setAlias($this->getAlias());
 
                 // Build CTE sub-query.

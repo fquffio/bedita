@@ -14,6 +14,7 @@
 namespace BEdita\Core\Test\TestCase\Model\Entity;
 
 use BEdita\Core\Utility\JsonApiSerializable;
+use BEdita\Core\Utility\LoggedUser;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
@@ -44,18 +45,19 @@ class JsonApiTraitTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.trees',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.Trees',
+        'plugin.BEdita/Core.History',
     ];
 
     /**
@@ -65,8 +67,10 @@ class JsonApiTraitTest extends TestCase
     {
         parent::setUp();
 
-        $this->Roles = TableRegistry::get('Roles');
-        $this->ObjectTypes = TableRegistry::get('ObjectTypes');
+        $this->Roles = TableRegistry::getTableLocator()->get('Roles');
+        $this->ObjectTypes = TableRegistry::getTableLocator()->get('ObjectTypes');
+
+        $this->loadPlugins(['BEdita/API' => ['routes' => true]]);
     }
 
     /**
@@ -322,14 +326,14 @@ class JsonApiTraitTest extends TestCase
     public function testGetRelationshipsIncludedEmpty()
     {
         // This is needed in order to permanently remove user with id 5
-        $usersTable = TableRegistry::get('Users');
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
         $user = $usersTable->get(5);
         $user->created_by = 1;
         $user->modified_by = 1;
         $user = $usersTable->saveOrFail($user);
-        $doc = TableRegistry::get('Objects')->get(3);
+        $doc = TableRegistry::getTableLocator()->get('Objects')->get(3);
         $doc->modified_by = 1;
-        $doc = TableRegistry::get('Objects')->saveOrFail($doc);
+        $doc = TableRegistry::getTableLocator()->get('Objects')->saveOrFail($doc);
 
         $usersTable->delete($usersTable->get(5));
 

@@ -18,9 +18,9 @@ use BEdita\API\TestSuite\IntegrationTestCase;
 use BEdita\API\Test\TestConstants;
 use BEdita\Core\State\CurrentApplication;
 use Cake\Core\Configure;
+use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Exception\NotAcceptableException;
 use Cake\Http\ServerRequest;
-use Cake\Network\Exception\ForbiddenException;
-use Cake\Network\Exception\NotAcceptableException;
 
 /**
  * @coversDefaultClass \BEdita\API\Controller\AppController
@@ -174,6 +174,25 @@ class AppControllerTest extends IntegrationTestCase
         $controller->dispatchEvent('Controller.initialize');
 
         static::assertEquals($expected, CurrentApplication::getApplicationId());
+    }
+
+    /**
+     * Test default behavior on missing 'Security.blockAnonymousApps' key
+     *
+     * @return void
+     * @coversNothing
+     */
+    public function testGetApplicationDefault()
+    {
+        static::expectException(ForbiddenException::class);
+        static::expectExceptionMessage('Missing API key');
+
+        Configure::delete('Security.blockAnonymousApps');
+        CurrentApplication::getInstance()->set(null);
+        $environment = ['HTTP_ACCEPT' => 'application/json'];
+        $request = new ServerRequest(compact('environment'));
+        $controller = new AppController($request);
+        $controller->dispatchEvent('Controller.initialize');
     }
 
     /**

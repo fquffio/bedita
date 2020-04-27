@@ -41,16 +41,16 @@ class FoldersTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.trees',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Trees',
     ];
 
     /**
@@ -60,7 +60,7 @@ class FoldersTableTest extends TestCase
     {
         parent::setUp();
 
-        $this->Folders = TableRegistry::get('Folders');
+        $this->Folders = TableRegistry::getTableLocator()->get('Folders');
         LoggedUser::setUser(['id' => 1]);
     }
 
@@ -244,7 +244,7 @@ class FoldersTableTest extends TestCase
      */
     public function testSave($expected, $data)
     {
-        $trees = TableRegistry::get('Trees');
+        $trees = TableRegistry::getTableLocator()->get('Trees');
         if (!empty($data['id'])) {
             $node = $trees->find()->where(['object_id' => $data['id']])->first();
             $descendants = $trees->childCount($node);
@@ -379,8 +379,8 @@ class FoldersTableTest extends TestCase
             })
             ->toArray();
 
-        $Trees = TableRegistry::get('Trees');
-        $Objects = TableRegistry::get('Objects');
+        $Trees = TableRegistry::getTableLocator()->get('Trees');
+        $Objects = TableRegistry::getTableLocator()->get('Objects');
 
         // all descendants exist and are on tree
         foreach (array_merge($notFoldersIds, $folderIds) as $id) {

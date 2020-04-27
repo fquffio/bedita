@@ -38,7 +38,7 @@ class RoleTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.roles',
+        'plugin.BEdita/Core.Roles',
     ];
 
     /**
@@ -48,7 +48,7 @@ class RoleTest extends TestCase
     {
         parent::setUp();
 
-        $this->Roles = TableRegistry::get('Roles');
+        $this->Roles = TableRegistry::getTableLocator()->get('Roles');
     }
 
     /**

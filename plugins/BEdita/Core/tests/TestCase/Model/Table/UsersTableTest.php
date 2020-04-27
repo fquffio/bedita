@@ -16,8 +16,8 @@ namespace BEdita\Core\Test\TestCase\Model\Table;
 use BEdita\Core\Model\Table\UsersTable;
 use BEdita\Core\Utility\LoggedUser;
 use Cake\Core\Configure;
+use Cake\Http\Exception\BadRequestException;
 use Cake\I18n\Time;
-use Cake\Network\Exception\BadRequestException;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 
@@ -42,20 +42,20 @@ class UsersTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_relations',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.auth_providers',
-        'plugin.BEdita/Core.external_auth',
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.roles_users',
-        'plugin.BEdita/Core.trees',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectRelations',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.AuthProviders',
+        'plugin.BEdita/Core.ExternalAuth',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.RolesUsers',
+        'plugin.BEdita/Core.Trees',
     ];
 
     /**
@@ -65,7 +65,7 @@ class UsersTableTest extends TestCase
     {
         parent::setUp();
 
-        $this->Users = TableRegistry::get('Users');
+        $this->Users = TableRegistry::getTableLocator()->get('Users');
         LoggedUser::setUser(['id' => 1]);
     }
 
@@ -195,6 +195,23 @@ class UsersTableTest extends TestCase
     }
 
     /**
+     * Test `loginRoles` finder.
+     *
+     * @return void
+     *
+     * @covers ::findLoginRoles()
+     */
+    public function testFindLoginRoles()
+    {
+        $user = $this->Users->find('loginRoles')->where(['username' => 'second user'])->first();
+        static::assertNotEmpty($user);
+        static::assertEquals('second user', $user['username']);
+        static::assertNotEmpty($user['roles']);
+        static::assertEquals(1, count($user['roles']));
+        static::assertEquals('second role', $user['roles'][0]['name']);
+    }
+
+    /**
      * Test `login` finder fail.
      *
      * @return void
@@ -221,7 +238,7 @@ class UsersTableTest extends TestCase
     public function testExternalAuthLogin()
     {
         //1. Add external auth and create new user
-        $authProvider = TableRegistry::get('AuthProviders')->get(2);
+        $authProvider = TableRegistry::getTableLocator()->get('AuthProviders')->get(2);
         $providerUsername = 'gustavo';
         $params = ['job' => 'head of technical support'];
         $userId = null;
@@ -236,7 +253,7 @@ class UsersTableTest extends TestCase
         static::assertEquals(16, $externalAuth->user_id);
 
         // 2. Add external auth to current user
-        $authProvider = TableRegistry::get('AuthProviders')->get(1);
+        $authProvider = TableRegistry::getTableLocator()->get('AuthProviders')->get(1);
         $providerUsername = 'friend of gustavo';
         $params = ['job' => 'support of technical support'];
         $userId = 5;
@@ -290,7 +307,7 @@ class UsersTableTest extends TestCase
      *
      * @return void
      *
-     * @expectedException \Cake\Network\Exception\BadRequestException
+     * @expectedException \Cake\Http\Exception\BadRequestException
      * @expectedExceptionCode 400
      * @expectedExceptionMessage Logged users cannot delete their own account
      * @covers ::beforeSave
@@ -514,6 +531,43 @@ class UsersTableTest extends TestCase
     }
 
     /**
+     * Test `findRoles` method.
+     *
+     * @return void
+     *
+     * @covers ::findRoles()
+     * @covers ::rolesNamesIds()
+     */
+    public function testFindRoles()
+    {
+        $expected = [
+            1 => 1,
+            5 => 5,
+        ];
+
+        $result = $this->Users->find('roles', [1, 'second role'])
+            ->find('list', ['keyField' => 'id', 'valueField' => 'id'])
+            ->toArray();
+
+        static::assertEquals($expected, $result);
+    }
+
+    /**
+     * Test `findRoles` failure method.
+     *
+     * @return void
+     *
+     * @expectedException \BEdita\Core\Exception\BadFilterException
+     * @expectedExceptionMessage Missing required parameter "roles"
+     * @covers ::findRoles()
+     */
+    public function testFindRolesFail()
+    {
+        $this->Users->find('roles', [])
+            ->toArray();
+    }
+
+    /**
      * Data provider for `beforeMarshal`
      *
      * @return array
@@ -707,7 +761,7 @@ class UsersTableTest extends TestCase
         $user->modified_by = 1;
         $user = $this->Users->saveOrFail($user);
 
-        $table = TableRegistry::get('Objects');
+        $table = TableRegistry::getTableLocator()->get('Objects');
         $doc = $table->get(3);
         $doc->modified_by = 1;
         $doc = $table->saveOrFail($doc);

@@ -17,10 +17,10 @@ use BEdita\Core\Model\Entity\User;
 use Cake\Event\Event;
 use Cake\Event\EventDispatcherTrait;
 use Cake\Event\EventListenerInterface;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\ConflictException;
 use Cake\I18n\Time;
 use Cake\Mailer\MailerAwareTrait;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\ConflictException;
 use Cake\ORM\TableRegistry;
 
 /**
@@ -30,7 +30,6 @@ use Cake\ORM\TableRegistry;
  */
 class SignupUserActivationAction extends BaseAction implements EventListenerInterface
 {
-
     use EventDispatcherTrait;
     use MailerAwareTrait;
 
@@ -53,8 +52,8 @@ class SignupUserActivationAction extends BaseAction implements EventListenerInte
      */
     protected function initialize(array $config)
     {
-        $this->Users = TableRegistry::get('Users');
-        $this->AsyncJobs = TableRegistry::get('AsyncJobs');
+        $this->Users = TableRegistry::getTableLocator()->get('Users');
+        $this->AsyncJobs = TableRegistry::getTableLocator()->get('AsyncJobs');
 
         $this->getEventManager()->on($this);
     }
@@ -62,8 +61,8 @@ class SignupUserActivationAction extends BaseAction implements EventListenerInte
     /**
      * {@inheritDoc}
      *
-     * @throws \Cake\Network\Exception\BadRequestException When missing id or async_jobs row is invalid
-     * @throws \Cake\Network\Exception\ConflictException When the user is already active
+     * @throws \Cake\Http\Exception\BadRequestException When missing id or async_jobs row is invalid
+     * @throws \Cake\Http\Exception\ConflictException When the user is already active
      */
     public function execute(array $data = [])
     {
@@ -77,7 +76,7 @@ class SignupUserActivationAction extends BaseAction implements EventListenerInte
             throw new BadRequestException(__d('bedita', 'Invalid async job, missing user_id'));
         }
 
-        $user = $this->Users->get($asyncJob->payload['user_id']);
+        $user = $this->Users->get($asyncJob->payload['user_id'], ['contain' => ['Roles']]);
         if ($user->status === 'on' && $user->verified !== null) {
             throw new ConflictException(__d('bedita', 'User already active'));
         }

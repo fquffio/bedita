@@ -33,7 +33,7 @@ class QueryFilterTraitTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
+        'plugin.BEdita/Core.FakeAnimals',
     ];
 
     /**
@@ -50,7 +50,7 @@ class QueryFilterTraitTest extends TestCase
     {
         parent::setUp();
 
-        $this->fakeAnimals = TableRegistry::get('FakeAnimals');
+        $this->fakeAnimals = TableRegistry::getTableLocator()->get('FakeAnimals');
     }
 
     /**

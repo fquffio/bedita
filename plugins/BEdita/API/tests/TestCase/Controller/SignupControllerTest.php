@@ -15,7 +15,7 @@ namespace BEdita\API\Test\TestCase\Controller;
 use BEdita\API\TestSuite\IntegrationTestCase;
 use Cake\Core\Configure;
 use Cake\I18n\Time;
-use Cake\Mailer\Email;
+use Cake\Mailer\TransportFactory;
 use Cake\ORM\TableRegistry;
 use Cake\Utility\Hash;
 
@@ -30,7 +30,7 @@ class SignupControllerTest extends IntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.async_jobs',
+        'plugin.BEdita/Core.AsyncJobs',
     ];
 
     /**
@@ -41,8 +41,8 @@ class SignupControllerTest extends IntegrationTestCase
         parent::setUp();
 
         Configure::write('Signup', []);
-        Email::dropTransport('default');
-        Email::setConfigTransport('default', [
+        TransportFactory::drop('default');
+        TransportFactory::setConfig('default', [
             'className' => 'Debug'
         ]);
     }
@@ -384,7 +384,7 @@ class SignupControllerTest extends IntegrationTestCase
         ];
         $this->post('/signup', json_encode($data));
 
-        $asyncJob = TableRegistry::get('AsyncJobs')->find()
+        $asyncJob = TableRegistry::getTableLocator()->get('AsyncJobs')->find()
             ->order(['AsyncJobs.created' => 'DESC'])
             ->first();
 
@@ -395,10 +395,8 @@ class SignupControllerTest extends IntegrationTestCase
         ]);
         $this->post('/signup/activation', json_encode($activationData));
 
-        $result = json_decode((string)$this->_response->getBody(), true);
-
         $this->assertResponseCode(204);
-        static::assertNull($result);
+        $this->assertResponseEmpty();
     }
 
     /**
@@ -422,13 +420,13 @@ class SignupControllerTest extends IntegrationTestCase
         ];
         $this->post('/signup', json_encode($data));
 
-        $asyncJob = TableRegistry::get('AsyncJobs')->find()
+        $asyncJob = TableRegistry::getTableLocator()->get('AsyncJobs')->find()
             ->order(['AsyncJobs.created' => 'DESC'])
             ->first();
 
         $activationData = ['uuid' => $asyncJob->uuid];
 
-        $Users = TableRegistry::get('Users');
+        $Users = TableRegistry::getTableLocator()->get('Users');
         $user = $Users->find()
             ->order(['created' => 'DESC'])
             ->first();

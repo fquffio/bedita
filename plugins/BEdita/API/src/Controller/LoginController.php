@@ -15,14 +15,16 @@ namespace BEdita\API\Controller;
 
 use BEdita\Core\Model\Action\ChangeCredentialsAction;
 use BEdita\Core\Model\Action\ChangeCredentialsRequestAction;
+use BEdita\Core\Model\Action\GetObjectAction;
 use BEdita\Core\Model\Action\SaveEntityAction;
 use BEdita\Core\Model\Entity\User;
 use Cake\Auth\PasswordHasherFactory;
 use Cake\Controller\Component\AuthComponent;
 use Cake\Core\Configure;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\NotFoundException;
-use Cake\Network\Exception\UnauthorizedException;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\NotFoundException;
+use Cake\Http\Exception\UnauthorizedException;
+use Cake\Http\Response;
 use Cake\ORM\TableRegistry;
 use Cake\Routing\Router;
 use Cake\Utility\Inflector;
@@ -62,13 +64,10 @@ class LoginController extends AppController
             $this->RequestHandler->setConfig('inputTypeMap.json', ['json_decode', true], false);
         }
 
-        if ($this->request->getParam('action') === 'login') {
+        if (in_array($this->request->getParam('action'), ['login', 'optout'])) {
             $authenticationComponents = [
                 AuthComponent::ALL => [
-                    'scope' => [
-                        'blocked' => false,
-                    ],
-                    'contain' => ['Roles'],
+                  'finder' => 'loginRoles',
                 ],
                 'Form' => [
                     'fields' => [
@@ -76,18 +75,21 @@ class LoginController extends AppController
                         'password' => 'password_hash',
                     ],
                     'passwordHasher' => self::PASSWORD_HASHER,
-                    'finder' => 'login',
-                 ],
+                ],
                 'BEdita/API.Jwt' => [
                     'queryDatasource' => true,
                 ],
             ];
 
-            $authenticationComponents += TableRegistry::get('AuthProviders')
+            $authenticationComponents += TableRegistry::getTableLocator()->get('AuthProviders')
                 ->find('authenticate')
                 ->toArray();
 
             $this->Auth->setConfig('authenticate', $authenticationComponents, false);
+        }
+
+        if ($this->request->getParam('action') === 'optout') {
+            $this->Auth->setConfig('loginAction', ['_name' => 'api:login:optout']);
         }
 
         if ($this->request->getParam('action') === 'change') {
@@ -96,16 +98,71 @@ class LoginController extends AppController
     }
 
     /**
-     * Login action use cases:
+     * Login action via user identification with classic username/password, OTP, Oauth2 or 2FA.
+     * See `identify` method for more details.
+     *
+     * @return void
+     * @throws \Cake\Http\Exception\UnauthorizedException Throws an exception if user credentials are invalid or acces is not authorized
+     */
+    public function login(): void
+    {
+        $this->set('_serialize', []);
+        $result = $this->identify();
+        // Check if result contains only an authorization code (OTP & 2FA use cases)
+        if (!empty($result['authorization_code']) && count($result) === 1) {
+            $this->set('_meta', ['authorization_code' => $result['authorization_code']]);
+
+            return;
+        }
+        $user = $this->reducedUserData($result);
+        $meta = $this->jwtTokens($user);
+        $this->set('_meta', $meta);
+    }
+
+    /**
+     * Optout action
+     *
+     * 1. User should be identified like in `login` with classic username\password or OPT/2FA or Oauth2 flow
+     * 2. User data are deleted or anonymized like calling `DELETE /users/{id}`
+     * 3. An event `Auth.optout` is dispatched in order to (optionally) remove some user created data or trigger other actions
+     *
+     * @return \Cake\Http\Response|null
+     * @throws \Cake\Http\Exception\UnauthorizedException Throws an exception if user credentials are invalid or acces is not authorized
+     */
+    public function optout(): ?Response
+    {
+        $result = $this->identify();
+        // Check if result contains only an authorization code (OTP & 2FA use cases)
+        if (!empty($result['authorization_code']) && count($result) === 1) {
+            $meta = ['authorization_code' => $result['authorization_code']];
+            $this->set('_serialize', []);
+            $this->set('_meta', $meta);
+
+            return null;
+        }
+        // Execute actual optout
+        $table = TableRegistry::getTableLocator()->get('Users');
+        $action = new GetObjectAction(compact('table'));
+        $user = $action(['primaryKey' => $result['id']]);
+        // setup special `_optout` property to allow self-removal
+        $user->set('_optout', true);
+        $table->deleteOrFail($user);
+        $this->dispatchEvent('Auth.optout', [$result]);
+
+        return $this->response->withStatus(204);
+    }
+
+    /**
+     * User identification, used by `login` and `optout` actions:
      *
      *  - classic username and password
      *  - only with username, first step of OTP login
      *  - with username, authorization code and secret token as OTP login or 2FA access
      *
-     * @return void
-     * @throws \Cake\Network\Exception\UnauthorizedException Throws an exception if user credentials are invalid.
+     * @return array
+     * @throws \Cake\Http\Exception\UnauthorizedException Throws an exception if user credentials are invalid or access is unauthorized
      */
-    public function login()
+    protected function identify(): array
     {
         $this->request->allowMethod('post');
 
@@ -119,21 +176,12 @@ class LoginController extends AppController
         if (!$result || !is_array($result)) {
             throw new UnauthorizedException(__('Login request not successful'));
         }
-
-        // Check if result contains only an authorization code (OTP & 2FA use cases)
-        if (!empty($result['authorization_code']) && count($result) === 1) {
-            $meta = ['authorization_code' => $result['authorization_code']];
-        } else {
             // Result is a user; check endpoint permission on `/auth`
-            if (!$this->Auth->isAuthorized($result)) {
-                throw new UnauthorizedException(__('Login not authorized'));
-            }
-            $result = $this->reducedUserData($result);
-            $meta = $this->jwtTokens($result);
+        if (empty($result['authorization_code']) && !$this->Auth->isAuthorized($result)) {
+            throw new UnauthorizedException(__('Login not authorized'));
         }
 
-        $this->set('_serialize', []);
-        $this->set('_meta', $meta);
+        return $result;
     }
 
     /**
@@ -209,7 +257,7 @@ class LoginController extends AppController
      * Update user profile data.
      *
      * @return void
-     * @throws \Cake\Network\Exception\BadRequestException On invalid input data
+     * @throws \Cake\Http\Exception\BadRequestException On invalid input data
      */
     public function update()
     {
@@ -224,7 +272,7 @@ class LoginController extends AppController
         $data = $this->request->getData();
         $this->checkPassword($entity, $data);
 
-        $action = new SaveEntityAction(['table' => TableRegistry::get('Users')]);
+        $action = new SaveEntityAction(['table' => TableRegistry::getTableLocator()->get('Users')]);
         $action(compact('entity', 'data'));
 
         // reload entity to cancel previous `setAccess` (otherwise `username` and `email` will appear in `meta`)
@@ -239,7 +287,7 @@ class LoginController extends AppController
      *
      * @param \BEdita\Core\Model\Entity\User $entity Logged user entity.
      * @param array $data Request data.
-     * @throws \Cake\Network\Exception\BadRequestException Throws an exception if current password is not correct.
+     * @throws \Cake\Http\Exception\BadRequestException Throws an exception if current password is not correct.
      * @return void
      */
     protected function checkPassword(User $entity, array $data)
@@ -262,7 +310,7 @@ class LoginController extends AppController
      * Read logged user entity including roles and other related objects via `include` query string.
      *
      * @return \BEdita\Core\Model\Entity\User Logged user entity
-     * @throws \Cake\Network\Exception\UnauthorizedException Throws an exception if user not logged.
+     * @throws \Cake\Http\Exception\UnauthorizedException Throws an exception if user not logged or blocked/removed
      */
     protected function userEntity()
     {
@@ -272,8 +320,16 @@ class LoginController extends AppController
         }
         $contain = $this->prepareInclude($this->request->getQuery('include'));
         $contain = array_unique(array_merge($contain, ['Roles']));
+        $conditions = ['id' => $userId];
 
-        return TableRegistry::get('Users')->get($userId, compact('contain'));
+        $user = TableRegistry::getTableLocator()->get('Users')
+            ->find('login', compact('conditions', 'contain'))
+            ->first();
+        if (empty($user)) {
+            throw new UnauthorizedException(__('Request not authorized'));
+        }
+
+        return $user;
     }
 
     /**
@@ -282,7 +338,7 @@ class LoginController extends AppController
     protected function findAssociation($relationship)
     {
         $relationship = Inflector::underscore($relationship);
-        $association = TableRegistry::get('Users')->associations()->getByProperty($relationship);
+        $association = TableRegistry::getTableLocator()->get('Users')->associations()->getByProperty($relationship);
         if (empty($association)) {
             throw new NotFoundException(__d('bedita', 'Relationship "{0}" does not exist', $relationship));
         }

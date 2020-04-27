@@ -28,8 +28,8 @@ class ObjectTypesControllerTest extends IntegrationTestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.properties',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.Properties',
     ];
 
     /**
@@ -114,7 +114,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
                         'name' => 'documents',
                         'description' => null,
                         'table' => 'BEdita/Core.Objects',
-                        'associations' => null,
+                        'associations' => ['Categories'],
                         'hidden' => null,
                         'is_abstract' => false,
                         'parent_name' => 'objects',
@@ -162,7 +162,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
                         'name' => 'profiles',
                         'description' => null,
                         'table' => 'BEdita/Core.Profiles',
-                        'associations' => null,
+                        'associations' => ['Tags'],
                         'hidden' => null,
                         'is_abstract' => false,
                         'parent_name' => 'objects',
@@ -356,7 +356,9 @@ class ObjectTypesControllerTest extends IntegrationTestCase
                     ],
                     'meta' => [
                         'alias' => 'Events',
-                        'relations' => [],
+                        'relations' => [
+                           'test_abstract',
+                        ],
                         'created' => '2017-11-10T09:27:23+00:00',
                         'modified' => '2017-11-10T09:27:23+00:00',
                         'core_type' => true,
@@ -449,7 +451,6 @@ class ObjectTypesControllerTest extends IntegrationTestCase
                     'meta' => [
                         'alias' => 'Files',
                         'relations' => [
-                            'test_abstract',
                             'inverse_test_abstract',
                         ],
                         'created' => '2017-11-10T09:27:23+00:00',
@@ -577,10 +578,10 @@ class ObjectTypesControllerTest extends IntegrationTestCase
             'data' => [],
         ];
 
-        TableRegistry::get('Properties')->deleteAll([]);
-        TableRegistry::get('Translations')->deleteAll([]);
-        TableRegistry::get('Objects')->deleteAll([]);
-        TableRegistry::get('ObjectTypes')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Properties')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Translations')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('Objects')->deleteAll([]);
+        TableRegistry::getTableLocator()->get('ObjectTypes')->deleteAll([]);
 
         $this->configRequestHeaders();
         $this->get('/model/object_types');
@@ -614,7 +615,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
                     'name' => 'documents',
                     'description' => null,
                     'table' => 'BEdita/Core.Objects',
-                    'associations' => null,
+                    'associations' => ['Categories'],
                     'hidden' => null,
                     'is_abstract' => false,
                     'parent_name' => 'objects',
@@ -734,7 +735,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
         $this->assertResponseCode(201);
         $this->assertContentType('application/vnd.api+json');
         $this->assertHeader('Location', 'http://api.example.com/model/object_types/11');
-        $this->assertTrue(TableRegistry::get('ObjectTypes')->exists(['singular' => 'my_object_type']));
+        $this->assertTrue(TableRegistry::getTableLocator()->get('ObjectTypes')->exists(['singular' => 'my_object_type']));
     }
 
     /**
@@ -755,12 +756,12 @@ class ObjectTypesControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $count = TableRegistry::get('ObjectTypes')->find()->count();
+        $count = TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count();
         $this->configRequestHeaders('POST', $this->getUserAuthHeader());
         $this->post('/model/object_types', json_encode(compact('data')));
         $this->assertResponseCode(400);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals($count, TableRegistry::get('ObjectTypes')->find()->count());
+        $this->assertEquals($count, TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count());
     }
 
     /**
@@ -782,12 +783,12 @@ class ObjectTypesControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $count = TableRegistry::get('ObjectTypes')->find()->count();
+        $count = TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count();
         $this->configRequestHeaders('POST', $this->getUserAuthHeader());
         $this->post('/model/object_types', json_encode(compact('data')));
         $this->assertResponseCode(400);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals($count, TableRegistry::get('ObjectTypes')->find()->count());
+        $this->assertEquals($count, TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count());
     }
 
     /**
@@ -809,12 +810,12 @@ class ObjectTypesControllerTest extends IntegrationTestCase
             ],
         ];
 
-        $count = TableRegistry::get('ObjectTypes')->find()->count();
+        $count = TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count();
         $this->configRequestHeaders('POST', $this->getUserAuthHeader());
         $this->post('/model/object_types', json_encode(compact('data')));
         $this->assertResponseCode(400);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals($count, TableRegistry::get('ObjectTypes')->find()->count());
+        $this->assertEquals($count, TableRegistry::getTableLocator()->get('ObjectTypes')->find()->count());
     }
 
     /**
@@ -841,7 +842,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
         $this->assertResponseCode(200);
         $this->assertContentType('application/vnd.api+json');
 
-        $ObjectTypes = TableRegistry::get('ObjectTypes');
+        $ObjectTypes = TableRegistry::getTableLocator()->get('ObjectTypes');
         $entity = $ObjectTypes->get(2);
         $this->assertEquals('document new', $entity->get('singular'));
 
@@ -900,8 +901,8 @@ class ObjectTypesControllerTest extends IntegrationTestCase
 
         $this->assertResponseCode(409);
         $this->assertContentType('application/vnd.api+json');
-        $this->assertEquals('document', TableRegistry::get('ObjectTypes')->get(2)->get('singular'));
-        $this->assertEquals('profile', TableRegistry::get('ObjectTypes')->get(3)->get('singular'));
+        $this->assertEquals('document', TableRegistry::getTableLocator()->get('ObjectTypes')->get(2)->get('singular'));
+        $this->assertEquals('profile', TableRegistry::getTableLocator()->get('ObjectTypes')->get(3)->get('singular'));
     }
 
     /**
@@ -918,7 +919,7 @@ class ObjectTypesControllerTest extends IntegrationTestCase
         $this->delete('/model/object_types/5');
 
         $this->assertResponseCode(204);
-        $this->assertContentType('application/vnd.api+json');
-        $this->assertFalse(TableRegistry::get('ObjectTypes')->exists(['id' => 5]));
+        $this->assertResponseEmpty();
+        $this->assertFalse(TableRegistry::getTableLocator()->get('ObjectTypes')->exists(['id' => 5]));
     }
 }

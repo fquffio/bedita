@@ -33,7 +33,7 @@ class SaveEntityActionTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
+        'plugin.BEdita/Core.FakeAnimals',
     ];
 
     /**
@@ -46,7 +46,7 @@ class SaveEntityActionTest extends TestCase
      */
     public function testExecute()
     {
-        $table = TableRegistry::get('FakeAnimals');
+        $table = TableRegistry::getTableLocator()->get('FakeAnimals');
         $action = new SaveEntityAction(compact('table'));
 
         $entity = $table->newEntity();
@@ -66,13 +66,13 @@ class SaveEntityActionTest extends TestCase
      *
      * @return void
      *
-     * @expectedException \Cake\Network\Exception\BadRequestException
+     * @expectedException \Cake\Http\Exception\BadRequestException
      * @covers ::initialize()
      * @covers ::execute()
      */
     public function testExecuteValitationErrors()
     {
-        $table = TableRegistry::get('FakeAnimals');
+        $table = TableRegistry::getTableLocator()->get('FakeAnimals');
         $table->setValidator(
             $table::DEFAULT_VALIDATOR,
             (new Validator())
@@ -94,13 +94,13 @@ class SaveEntityActionTest extends TestCase
      *
      * @return void
      *
-     * @expectedException \Cake\Network\Exception\InternalErrorException
+     * @expectedException \Cake\Http\Exception\InternalErrorException
      * @covers ::initialize()
      * @covers ::execute()
      */
     public function testExecuteSaveErrors()
     {
-        $entity = TableRegistry::get('FakeAnimals')->get(1);
+        $entity = TableRegistry::getTableLocator()->get('FakeAnimals')->get(1);
 
         $table = $this->getMockBuilder(Table::class)
             ->getMock();

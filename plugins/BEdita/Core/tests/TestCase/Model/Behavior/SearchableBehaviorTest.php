@@ -32,9 +32,9 @@ class SearchableBehaviorTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.fake_animals',
-        'plugin.BEdita/Core.fake_mammals',
-        'plugin.BEdita/Core.fake_felines',
+        'plugin.BEdita/Core.FakeAnimals',
+        'plugin.BEdita/Core.FakeMammals',
+        'plugin.BEdita/Core.FakeFelines',
     ];
 
     /**
@@ -44,10 +44,10 @@ class SearchableBehaviorTest extends TestCase
     {
         parent::setUp();
 
-        TableRegistry::get('FakeMammals', ['className' => Table::class])
+        TableRegistry::getTableLocator()->get('FakeMammals', ['className' => Table::class])
             ->setDisplayField('name')
             ->extensionOf('FakeAnimals');
-        TableRegistry::get('FakeFelines', ['className' => Table::class])
+        TableRegistry::getTableLocator()->get('FakeFelines', ['className' => Table::class])
             ->setDisplayField('name')
             ->extensionOf('FakeMammals');
     }
@@ -68,7 +68,7 @@ class SearchableBehaviorTest extends TestCase
             'my_field' => 17,
         ];
 
-        $table = TableRegistry::get('FakeAnimals');
+        $table = TableRegistry::getTableLocator()->get('FakeAnimals');
         $table->addBehavior('BEdita/Core.Searchable', compact('columnTypes', 'fields'));
 
         /* @var \BEdita\Core\Model\Behavior\SearchableBehavior $behavior */
@@ -134,7 +134,7 @@ class SearchableBehaviorTest extends TestCase
      */
     public function testGetFields(array $expected, array $config = [], $table = 'FakeAnimals')
     {
-        $table = TableRegistry::get($table);
+        $table = TableRegistry::getTableLocator()->get($table);
         $table->addBehavior('BEdita/Core.Searchable', $config);
 
         /* @var \BEdita\Core\Model\Behavior\SearchableBehavior $behavior */
@@ -213,7 +213,7 @@ class SearchableBehaviorTest extends TestCase
             $this->expectExceptionMessage($expected->getMessage());
         }
 
-        $table = TableRegistry::get($table);
+        $table = TableRegistry::getTableLocator()->get($table);
         $table->addBehavior('BEdita/Core.Searchable');
 
         static::assertTrue($table->hasFinder('query'));

@@ -23,11 +23,11 @@ class ObjectPermissionsTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_permissions',
-        'plugin.BEdita/Core.users',
-        'plugin.BEdita/Core.roles',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectPermissions',
+        'plugin.BEdita/Core.Users',
+        'plugin.BEdita/Core.Roles',
     ];
 
     /**
@@ -39,7 +39,7 @@ class ObjectPermissionsTableTest extends TestCase
     {
         parent::setUp();
         $config = TableRegistry::exists('ObjectPermissions') ? [] : ['className' => 'BEdita\Core\Model\Table\ObjectPermissionsTable'];
-        $this->ObjectPermissions = TableRegistry::get('ObjectPermissions', $config);
+        $this->ObjectPermissions = TableRegistry::getTableLocator()->get('ObjectPermissions', $config);
     }
 
     /**

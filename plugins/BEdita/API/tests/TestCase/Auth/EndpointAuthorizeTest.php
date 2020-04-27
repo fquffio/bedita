@@ -18,10 +18,10 @@ use BEdita\Core\Model\Entity\Endpoint;
 use BEdita\Core\State\CurrentApplication;
 use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Controller;
+use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Exception\NotFoundException;
+use Cake\Http\Exception\UnauthorizedException;
 use Cake\Http\ServerRequest;
-use Cake\Network\Exception\ForbiddenException;
-use Cake\Network\Exception\NotFoundException;
-use Cake\Network\Exception\UnauthorizedException;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Psr\Http\Message\UriInterface;
@@ -38,12 +38,12 @@ class EndpointAuthorizeTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.roles',
-        'plugin.BEdita/Core.endpoints',
-        'plugin.BEdita/Core.applications',
-        'plugin.BEdita/Core.endpoint_permissions',
-        'plugin.BEdita/Core.config',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Roles',
+        'plugin.BEdita/Core.Endpoints',
+        'plugin.BEdita/Core.Applications',
+        'plugin.BEdita/Core.EndpointPermissions',
+        'plugin.BEdita/Core.Config',
     ];
 
     /**
@@ -117,7 +117,7 @@ class EndpointAuthorizeTest extends TestCase
         $authorize->authorize([], $request);
 
         if (is_int($expected)) {
-            $expected = TableRegistry::get('Endpoints')->get($expected);
+            $expected = TableRegistry::getTableLocator()->get('Endpoints')->get($expected);
         }
 
         static::assertAttributeEquals($expected, 'endpoint', $authorize);
@@ -223,7 +223,7 @@ class EndpointAuthorizeTest extends TestCase
             static::expectExceptionMessage($expected->getMessage());
         }
 
-        CurrentApplication::setApplication(TableRegistry::get('Applications')->get(2));
+        CurrentApplication::setApplication(TableRegistry::getTableLocator()->get('Applications')->get(2));
 
         $environment = [
             'REQUEST_METHOD' => $requestMethod,
@@ -262,8 +262,8 @@ class EndpointAuthorizeTest extends TestCase
     public function testAllowByDefault()
     {
         // Ensure no permissions apply to `/home` endpoint.
-        TableRegistry::get('EndpointPermissions')->deleteAll(['role_id IS' => null]);
-        TableRegistry::get('EndpointPermissions')->deleteAll(['endpoint_id' => 2]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['role_id IS' => null]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['endpoint_id' => 2]);
 
         $environment = [
             'REQUEST_METHOD' => 'GET',
@@ -306,7 +306,7 @@ class EndpointAuthorizeTest extends TestCase
     public function testAllowByDefaultUnknownEndpoint()
     {
         // Ensure no permissions apply to anonymous user.
-        TableRegistry::get('EndpointPermissions')->deleteAll(['role_id IS' => null]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['role_id IS' => null]);
 
         $environment = [
             'REQUEST_METHOD' => 'GET',
@@ -347,13 +347,13 @@ class EndpointAuthorizeTest extends TestCase
      * @covers ::getPermissions()
      * @covers ::checkPermissions()
      * @covers ::unauthenticated()
-     * @expectedException \Cake\Network\Exception\UnauthorizedException
+     * @expectedException \Cake\Http\Exception\UnauthorizedException
      * @expectedExceptionMessage Unauthorized
      */
     public function testBlockAnonymousWritesByDefault()
     {
         // Ensure no permissions apply to anonymous user on `/home` endpoint.
-        TableRegistry::get('EndpointPermissions')->deleteAll(['role_id IS' => null, 'endpoint_id' => 2]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['role_id IS' => null, 'endpoint_id' => 2]);
 
         $environment = [
             'REQUEST_METHOD' => 'POST',
@@ -388,13 +388,13 @@ class EndpointAuthorizeTest extends TestCase
      * @covers ::authorize()
      * @covers ::isAnonymous()
      * @covers ::unauthenticated()
-     * @expectedException \Cake\Network\Exception\UnauthorizedException
+     * @expectedException \Cake\Http\Exception\UnauthorizedException
      * @expectedExceptionMessage Unauthorized
      */
     public function testBlockUnloggedByDefault()
     {
         // Ensure no permissions apply to anonymous user on `/home` endpoint.
-        TableRegistry::get('EndpointPermissions')->deleteAll(['role_id IS' => null, 'endpoint_id' => 2]);
+        TableRegistry::getTableLocator()->get('EndpointPermissions')->deleteAll(['role_id IS' => null, 'endpoint_id' => 2]);
 
         $environment = [
             'REQUEST_METHOD' => 'GET',

@@ -23,11 +23,11 @@ class ObjectPropertiesTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.properties',
-        'plugin.BEdita/Core.property_types',
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.object_properties',
+        'plugin.BEdita/Core.Properties',
+        'plugin.BEdita/Core.PropertyTypes',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.ObjectProperties',
     ];
 
     /**
@@ -39,7 +39,7 @@ class ObjectPropertiesTableTest extends TestCase
     {
         parent::setUp();
         $config = TableRegistry::exists('ObjectProperties') ? [] : ['className' => 'BEdita\Core\Model\Table\ObjectPropertiesTable'];
-        $this->ObjectProperties = TableRegistry::get('ObjectProperties', $config);
+        $this->ObjectProperties = TableRegistry::getTableLocator()->get('ObjectProperties', $config);
     }
 
     /**

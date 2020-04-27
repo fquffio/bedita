@@ -19,10 +19,10 @@ use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Event\Event;
-use Cake\Network\Exception\BadRequestException;
-use Cake\Network\Exception\ForbiddenException;
-use Cake\Network\Exception\NotAcceptableException;
-use Cake\Network\Exception\NotFoundException;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Exception\NotAcceptableException;
+use Cake\Http\Exception\NotFoundException;
 use Cake\Routing\Router;
 
 /**
@@ -34,15 +34,24 @@ use Cake\Routing\Router;
  */
 class AppController extends Controller
 {
-
     /**
      * {@inheritDoc}
      */
     public $paginate = [
-        'maxLimit' => 100,
         'order' => [
             'id' => 'asc',
         ],
+    ];
+
+    /**
+     * Default pagination options.
+     * May be overridden in configuration.
+     *
+     * @var array
+     */
+    public $defaultPagination = [
+        'limit' => 20,
+        'maxLimit' => 100,
     ];
 
     /**
@@ -56,7 +65,7 @@ class AppController extends Controller
 
         $this->getApplication();
 
-        $this->loadComponent('Paginator', (array)Configure::read('Pagination'));
+        $this->loadComponent('Paginator', (array)Configure::read('Pagination', $this->defaultPagination));
         $this->loadComponent('RequestHandler');
         if ($this->request->is(['json', 'jsonapi'])) {
             $this->loadComponent('BEdita/API.JsonApi', [
@@ -112,7 +121,7 @@ class AppController extends Controller
      * alternatively `api_key` query string is used (not recommended)
      *
      * @return void
-     * @throws \Cake\Network\Exception\ForbiddenException Throws an exception if API key is missing or invalid.
+     * @throws \Cake\Http\Exception\ForbiddenException Throws an exception if API key is missing or invalid.
      */
     protected function getApplication()
     {
@@ -121,7 +130,7 @@ class AppController extends Controller
             if (empty($apiKey)) {
                 $apiKey = (string)$this->request->getQuery('api_key');
             }
-            if (empty($apiKey) && empty(Configure::read('Security.blockAnonymousApps'))) {
+            if (empty($apiKey) && empty(Configure::read('Security.blockAnonymousApps', true))) {
                 return;
             }
 
@@ -140,7 +149,7 @@ class AppController extends Controller
      *
      * @param string|array|null $include Association(s) to be included.
      * @return array
-     * @throws \Cake\Network\Exception\BadRequestException Throws an exception if a
+     * @throws \Cake\Http\Exception\BadRequestException Throws an exception if a
      */
     protected function prepareInclude($include)
     {
@@ -180,7 +189,7 @@ class AppController extends Controller
      *
      * @param string $relationship Relationship name.
      * @return \Cake\ORM\Association|void
-     * @throws \Cake\Network\Exception\NotFoundException Throws an exception if no suitable association could be found.
+     * @throws \Cake\Http\Exception\NotFoundException Throws an exception if no suitable association could be found.
      * @codeCoverageIgnore
      */
     protected function findAssociation($relationship)

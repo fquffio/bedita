@@ -31,13 +31,13 @@ class RelatedToTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.object_types',
-        'plugin.BEdita/Core.relations',
-        'plugin.BEdita/Core.relation_types',
-        'plugin.BEdita/Core.objects',
-        'plugin.BEdita/Core.profiles',
-        'plugin.BEdita/Core.locations',
-        'plugin.BEdita/Core.object_relations',
+        'plugin.BEdita/Core.ObjectTypes',
+        'plugin.BEdita/Core.Relations',
+        'plugin.BEdita/Core.RelationTypes',
+        'plugin.BEdita/Core.Objects',
+        'plugin.BEdita/Core.Profiles',
+        'plugin.BEdita/Core.Locations',
+        'plugin.BEdita/Core.ObjectRelations',
     ];
 
     /**
@@ -106,8 +106,8 @@ class RelatedToTest extends TestCase
      */
     public function testGetSubQueryForMatching(array $expected, $table, $association, array $options = [])
     {
-        $table = TableRegistry::get($table);
-        $association = $table->association($association);
+        $table = TableRegistry::getTableLocator()->get($table);
+        $association = $table->getAssociation($association);
         if (!($association instanceof RelatedTo)) {
             static::fail('Wrong association type');
 
@@ -164,7 +164,7 @@ class RelatedToTest extends TestCase
     public function testIsSourceAbstract($expected, $table)
     {
         $relatedTo = new RelatedTo('SourceAbstract');
-        $relatedTo->setSource(TableRegistry::get($table));
+        $relatedTo->setSource(TableRegistry::getTableLocator()->get($table));
         static::assertSame($expected, $relatedTo->isSourceAbstract());
     }
 
@@ -182,7 +182,63 @@ class RelatedToTest extends TestCase
     public function testIsTargetAbstract($expected, $table)
     {
         $relatedTo = new RelatedTo('SourceAbstract');
-        $relatedTo->setTarget(TableRegistry::get($table));
+        $relatedTo->setTarget(TableRegistry::getTableLocator()->get($table));
         static::assertSame($expected, $relatedTo->isTargetAbstract());
+    }
+
+    /**
+     * Data provider for testIsInverse()
+     *
+     * @return array
+     */
+    public function isInverseProvider(): array
+    {
+        return [
+            'direct' => [
+                false,
+                [
+                    'foreignKey' => 'left_id',
+                ],
+            ],
+            'inverse' => [
+                true,
+                [
+                    'foreignKey' => 'right_id',
+                ],
+            ],
+            'inverseCustom' => [
+                true,
+                [
+                    'foreignKey' => 'left_id',
+                    'inverseKey' => 'left_id',
+                ],
+            ],
+            'inverseMultiCustom' => [
+                true,
+                [
+                    'foreignKey' => ['left_id', 'custom_key'],
+                    'inverseKey' => ['left_id', 'custom_key'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test if related association is inverse.
+     *
+     * @param bool $expected The value expected.
+     * @param array $options The options for the association.
+     * @return void
+     *
+     * @dataProvider isInverseProvider()
+     * @covers ::isInverse()
+     * @covers ::_options()
+     * @covers ::setInverseKey()
+     * @covers ::getInverseKey()
+     */
+    public function testIsInverse($expected, $options): void
+    {
+        $relatedTo = new RelatedTo('Alias', $options);
+        static::assertEquals($expected, $relatedTo->isInverse());
     }
 }

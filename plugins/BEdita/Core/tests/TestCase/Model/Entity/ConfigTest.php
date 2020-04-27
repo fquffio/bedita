@@ -37,8 +37,8 @@ class ConfigTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'plugin.BEdita/Core.applications',
-        'plugin.BEdita/Core.config',
+        'plugin.BEdita/Core.Applications',
+        'plugin.BEdita/Core.Config',
     ];
 
     /**
@@ -47,7 +47,7 @@ class ConfigTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->Config = TableRegistry::get('Config');
+        $this->Config = TableRegistry::getTableLocator()->get('Config');
     }
 
     /**
